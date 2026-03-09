@@ -452,7 +452,7 @@ export class AudioEngine {
       this.currentTrackIndex = idx % sorted.length
       const track = sorted[this.currentTrackIndex]
 
-      this.updateStore({ activeTrackId: track.id })
+      this.updateStore({ activeClimateId: this.currentClimate.id, activeTrackId: track.id })
 
       const inId = this.getInactiveChannelId()
       const inChannel = this.getChannel(inId)
