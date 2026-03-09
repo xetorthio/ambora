@@ -705,7 +705,7 @@ export class AudioEngine {
     if (!this.currentClimate) return
 
     const sorted = [...this.currentClimate.tracks].sort((a, b) => a.order - b.order)
-    const trackIndex = sorted.findIndex(t => t.id === trackId)
+    const trackIndex = sorted.findIndex((t) => t.id === trackId)
 
     if (trackIndex === -1) return
 

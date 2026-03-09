@@ -262,7 +262,12 @@ export function ClimateDetail({
                 </div>
               </div>
             )}
-            <TrackList tracks={climate.tracks} onDeleteTrack={handleDeleteTrack} climateColor={climate.color} onPlayTrack={handlePlayTrack} />
+            <TrackList
+              tracks={climate.tracks}
+              onDeleteTrack={handleDeleteTrack}
+              climateColor={climate.color}
+              onPlayTrack={handlePlayTrack}
+            />
           </div>
         </div>
       </div>

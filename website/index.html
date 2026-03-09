@@ -1,1367 +1,1775 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Ambora — Atmospheric Music for Your Tabletop RPG Sessions</title>
-  <meta name="description" content="Control your D&D session music from your phone. One-tap climate switching with smooth crossfades. Free, open-source desktop app for DMs.">
-  <meta name="keywords" content="D&D music, tabletop RPG music, DM tools, session music, ambient music player, TTRPG, dungeon master, campaign music, RPG soundboard">
-  <meta name="author" content="Ambora">
-  <meta name="robots" content="index, follow">
-  <link rel="canonical" href="https://ambora.app">
-  <link rel="icon" type="image/svg+xml" href="favicon.svg">
-  <link rel="icon" type="image/png" sizes="192x192" href="favicon-192.png">
-  <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Ambora — Atmospheric Music for Your Tabletop RPG Sessions</title>
+    <meta
+      name="description"
+      content="Control your D&D session music from your phone. One-tap climate switching with smooth crossfades. Free, open-source desktop app for DMs."
+    />
+    <meta
+      name="keywords"
+      content="D&D music, tabletop RPG music, DM tools, session music, ambient music player, TTRPG, dungeon master, campaign music, RPG soundboard"
+    />
+    <meta name="author" content="Ambora" />
+    <meta name="robots" content="index, follow" />
+    <link rel="canonical" href="https://ambora.app" />
+    <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+    <link rel="icon" type="image/png" sizes="192x192" href="favicon-192.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png" />
 
-  <!-- Open Graph -->
-  <meta property="og:type" content="website">
-  <meta property="og:title" content="Ambora — Atmospheric Music for Your Tabletop RPG Sessions">
-  <meta property="og:description" content="Control your D&D session music from your phone. One-tap climate switching with smooth crossfades. Free & open source.">
-  <meta property="og:url" content="https://ambora.app">
-  <meta property="og:site_name" content="Ambora">
-  <meta property="og:image" content="https://ambora.app/og-image.png">
-  <meta property="og:image:width" content="1200">
-  <meta property="og:image:height" content="630">
-  <meta property="og:logo" content="https://ambora.app/favicon-192.png">
+    <!-- Open Graph -->
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Ambora — Atmospheric Music for Your Tabletop RPG Sessions" />
+    <meta
+      property="og:description"
+      content="Control your D&D session music from your phone. One-tap climate switching with smooth crossfades. Free & open source."
+    />
+    <meta property="og:url" content="https://ambora.app" />
+    <meta property="og:site_name" content="Ambora" />
+    <meta property="og:image" content="https://ambora.app/og-image.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:logo" content="https://ambora.app/favicon-192.png" />
 
-  <!-- Twitter Card -->
-  <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="Ambora — Atmospheric Music for Your Tabletop RPG Sessions">
-  <meta name="twitter:description" content="Control your D&D session music from your phone. One-tap climate switching with smooth crossfades.">
-  <meta name="twitter:image" content="https://ambora.app/og-image.png">
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta
+      name="twitter:title"
+      content="Ambora — Atmospheric Music for Your Tabletop RPG Sessions"
+    />
+    <meta
+      name="twitter:description"
+      content="Control your D&D session music from your phone. One-tap climate switching with smooth crossfades."
+    />
+    <meta name="twitter:image" content="https://ambora.app/og-image.png" />
 
-  <!-- Structured Data -->
-  <script type="application/ld+json">
-  {
-    "@context": "https://schema.org",
-    "@type": "SoftwareApplication",
-    "name": "Ambora",
-    "description": "Desktop app with phone remote control for managing atmospheric music during tabletop RPG sessions.",
-    "applicationCategory": "MultimediaApplication",
-    "operatingSystem": "macOS, Windows, Linux",
-    "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
-    "license": "https://opensource.org/licenses/MIT"
-  }
-  </script>
+    <!-- Structured Data -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "SoftwareApplication",
+        "name": "Ambora",
+        "description": "Desktop app with phone remote control for managing atmospheric music during tabletop RPG sessions.",
+        "applicationCategory": "MultimediaApplication",
+        "operatingSystem": "macOS, Windows, Linux",
+        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+        "license": "https://opensource.org/licenses/MIT"
+      }
+    </script>
 
-  <!-- Fonts -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" onload="this.rel='stylesheet'">
-  <noscript><link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"></noscript>
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="preload"
+      as="style"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+      onload="this.rel = 'stylesheet'"
+    />
+    <noscript
+      ><link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+        rel="stylesheet"
+    /></noscript>
 
-  <style>
-    /* ================================================
+    <style>
+      /* ================================================
        RESET & BASE
        ================================================ */
-    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
-    html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; font-size: 16px; }
+      *,
+      *::before,
+      *::after {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      html {
+        scroll-behavior: smooth;
+        -webkit-text-size-adjust: 100%;
+        font-size: 16px;
+      }
 
-    :root {
-      --bg: #08080A;
-      --bg-elevated: #0E0E11;
-      --surface-1: #131316;
-      --surface-2: #1A1A1E;
-      --surface-3: #222228;
-      --border: #2A2A32;
-      --border-subtle: #1E1E24;
-      --text: #EAEAED;
-      --text-secondary: #9494A0;
-      --text-muted: #5C5C68;
-      --accent: #7B93F5;
-      --accent-light: #95A8F8;
-      --accent-dim: rgba(123, 147, 245, 0.12);
-      --indigo: #6659D9;
-      --violet: #8B49B8;
-      --emerald: #2D9A5D;
-      --crimson: #DC3545;
-      --amber: #D4943A;
-      --teal: #21917F;
-      --cobalt: #4B6BD4;
-      --font: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
-      --mono: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
-    }
+      :root {
+        --bg: #08080a;
+        --bg-elevated: #0e0e11;
+        --surface-1: #131316;
+        --surface-2: #1a1a1e;
+        --surface-3: #222228;
+        --border: #2a2a32;
+        --border-subtle: #1e1e24;
+        --text: #eaeaed;
+        --text-secondary: #9494a0;
+        --text-muted: #5c5c68;
+        --accent: #7b93f5;
+        --accent-light: #95a8f8;
+        --accent-dim: rgba(123, 147, 245, 0.12);
+        --indigo: #6659d9;
+        --violet: #8b49b8;
+        --emerald: #2d9a5d;
+        --crimson: #dc3545;
+        --amber: #d4943a;
+        --teal: #21917f;
+        --cobalt: #4b6bd4;
+        --font: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+        --mono: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
+      }
 
-    body {
-      background: var(--bg);
-      color: var(--text);
-      font-family: var(--font);
-      line-height: 1.6;
-      overflow-x: hidden;
-      -webkit-font-smoothing: antialiased;
-      -moz-osx-font-smoothing: grayscale;
-    }
+      body {
+        background: var(--bg);
+        color: var(--text);
+        font-family: var(--font);
+        line-height: 1.6;
+        overflow-x: hidden;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+      }
 
-    img { max-width: 100%; display: block; }
-    a { color: var(--accent); text-decoration: none; transition: color 0.2s; }
-    a:hover { color: var(--accent-light); }
+      img {
+        max-width: 100%;
+        display: block;
+      }
+      a {
+        color: var(--accent);
+        text-decoration: none;
+        transition: color 0.2s;
+      }
+      a:hover {
+        color: var(--accent-light);
+      }
 
-    .container {
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: 0 24px;
-    }
+      .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 0 24px;
+      }
 
-    /* ================================================
+      /* ================================================
        NAVIGATION
        ================================================ */
-    nav {
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      z-index: 100;
-      padding: 0 24px;
-      transition: background 0.3s, backdrop-filter 0.3s, border-color 0.3s;
-      border-bottom: 1px solid transparent;
-    }
+      nav {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        z-index: 100;
+        padding: 0 24px;
+        transition:
+          background 0.3s,
+          backdrop-filter 0.3s,
+          border-color 0.3s;
+        border-bottom: 1px solid transparent;
+      }
 
-    nav.scrolled {
-      background: rgba(8, 8, 10, 0.85);
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
-      border-color: var(--border-subtle);
-    }
+      nav.scrolled {
+        background: rgba(8, 8, 10, 0.85);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border-color: var(--border-subtle);
+      }
 
-    nav .nav-inner {
-      max-width: 1200px;
-      margin: 0 auto;
-      height: 64px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    }
+      nav .nav-inner {
+        max-width: 1200px;
+        margin: 0 auto;
+        height: 64px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
 
-    .nav-logo {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
+      .nav-logo {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
 
-    .nav-logo svg { width: 28px; height: 28px; }
+      .nav-logo svg {
+        width: 28px;
+        height: 28px;
+      }
 
-    .nav-logo span {
-      font-size: 18px;
-      font-weight: 400;
-      letter-spacing: 0.18em;
-      color: var(--text);
-    }
+      .nav-logo span {
+        font-size: 18px;
+        font-weight: 400;
+        letter-spacing: 0.18em;
+        color: var(--text);
+      }
 
-    .nav-links {
-      display: flex;
-      align-items: center;
-      gap: 32px;
-      list-style: none;
-    }
+      .nav-links {
+        display: flex;
+        align-items: center;
+        gap: 32px;
+        list-style: none;
+      }
 
-    .nav-links a {
-      font-size: 13px;
-      font-weight: 500;
-      color: var(--text-secondary);
-      transition: color 0.2s;
-      letter-spacing: 0.01em;
-    }
+      .nav-links a {
+        font-size: 13px;
+        font-weight: 500;
+        color: var(--text-secondary);
+        transition: color 0.2s;
+        letter-spacing: 0.01em;
+      }
 
-    .nav-links a:hover { color: var(--text); }
+      .nav-links a:hover {
+        color: var(--text);
+      }
 
-    .nav-cta {
-      font-size: 13px !important;
-      font-weight: 600 !important;
-      color: var(--accent) !important;
-      background: var(--accent-dim);
-      padding: 8px 18px;
-      border-radius: 8px;
-      transition: background 0.2s, color 0.2s !important;
-    }
+      .nav-cta {
+        font-size: 13px !important;
+        font-weight: 600 !important;
+        color: var(--accent) !important;
+        background: var(--accent-dim);
+        padding: 8px 18px;
+        border-radius: 8px;
+        transition:
+          background 0.2s,
+          color 0.2s !important;
+      }
 
-    .nav-cta:hover {
-      background: rgba(123, 147, 245, 0.2) !important;
-      color: var(--accent-light) !important;
-    }
+      .nav-cta:hover {
+        background: rgba(123, 147, 245, 0.2) !important;
+        color: var(--accent-light) !important;
+      }
 
-    .hamburger {
-      display: none;
-      flex-direction: column;
-      gap: 5px;
-      background: none;
-      border: none;
-      cursor: pointer;
-      padding: 4px;
-    }
+      .hamburger {
+        display: none;
+        flex-direction: column;
+        gap: 5px;
+        background: none;
+        border: none;
+        cursor: pointer;
+        padding: 4px;
+      }
 
-    .hamburger span {
-      display: block;
-      width: 22px;
-      height: 2px;
-      background: var(--text-secondary);
-      border-radius: 2px;
-      transition: transform 0.3s, opacity 0.3s;
-    }
+      .hamburger span {
+        display: block;
+        width: 22px;
+        height: 2px;
+        background: var(--text-secondary);
+        border-radius: 2px;
+        transition:
+          transform 0.3s,
+          opacity 0.3s;
+      }
 
-    .mobile-menu {
-      display: none;
-      position: fixed;
-      top: 64px;
-      left: 0;
-      right: 0;
-      background: rgba(8, 8, 10, 0.97);
-      backdrop-filter: blur(20px);
-      border-bottom: 1px solid var(--border);
-      padding: 20px 24px;
-      z-index: 99;
-    }
+      .mobile-menu {
+        display: none;
+        position: fixed;
+        top: 64px;
+        left: 0;
+        right: 0;
+        background: rgba(8, 8, 10, 0.97);
+        backdrop-filter: blur(20px);
+        border-bottom: 1px solid var(--border);
+        padding: 20px 24px;
+        z-index: 99;
+      }
 
-    .mobile-menu.open { display: block; }
+      .mobile-menu.open {
+        display: block;
+      }
 
-    .mobile-menu a {
-      display: block;
-      padding: 14px 0;
-      font-size: 15px;
-      color: var(--text-secondary);
-      border-bottom: 1px solid var(--border-subtle);
-    }
+      .mobile-menu a {
+        display: block;
+        padding: 14px 0;
+        font-size: 15px;
+        color: var(--text-secondary);
+        border-bottom: 1px solid var(--border-subtle);
+      }
 
-    .mobile-menu a:last-child { border: none; }
+      .mobile-menu a:last-child {
+        border: none;
+      }
 
-    /* ================================================
+      /* ================================================
        HERO
        ================================================ */
-    .hero {
-      min-height: 100vh;
-      display: flex;
-      align-items: center;
-      position: relative;
-      overflow: hidden;
-      padding: 100px 0 60px;
-    }
+      .hero {
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        position: relative;
+        overflow: hidden;
+        padding: 100px 0 60px;
+      }
 
-    /* Ambient gradient orbs */
-    .hero::before {
-      content: '';
-      position: absolute;
-      top: -20%;
-      right: -10%;
-      width: 700px;
-      height: 700px;
-      background: radial-gradient(circle, rgba(123, 147, 245, 0.06) 0%, transparent 65%);
-      pointer-events: none;
-    }
+      /* Ambient gradient orbs */
+      .hero::before {
+        content: '';
+        position: absolute;
+        top: -20%;
+        right: -10%;
+        width: 700px;
+        height: 700px;
+        background: radial-gradient(circle, rgba(123, 147, 245, 0.06) 0%, transparent 65%);
+        pointer-events: none;
+      }
 
-    .hero::after {
-      content: '';
-      position: absolute;
-      bottom: -30%;
-      left: -15%;
-      width: 800px;
-      height: 800px;
-      background: radial-gradient(circle, rgba(102, 89, 217, 0.04) 0%, transparent 65%);
-      pointer-events: none;
-    }
+      .hero::after {
+        content: '';
+        position: absolute;
+        bottom: -30%;
+        left: -15%;
+        width: 800px;
+        height: 800px;
+        background: radial-gradient(circle, rgba(102, 89, 217, 0.04) 0%, transparent 65%);
+        pointer-events: none;
+      }
 
-    .hero-inner {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 80px;
-      align-items: center;
-      position: relative;
-      z-index: 1;
-    }
+      .hero-inner {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 80px;
+        align-items: center;
+        position: relative;
+        z-index: 1;
+      }
 
-    .hero-content { max-width: 540px; }
+      .hero-content {
+        max-width: 540px;
+      }
 
-    .hero-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      background: var(--accent-dim);
-      border: 1px solid rgba(123, 147, 245, 0.15);
-      padding: 6px 14px;
-      border-radius: 100px;
-      font-size: 12px;
-      font-weight: 600;
-      color: var(--accent);
-      letter-spacing: 0.03em;
-      margin-bottom: 28px;
-    }
+      .hero-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        background: var(--accent-dim);
+        border: 1px solid rgba(123, 147, 245, 0.15);
+        padding: 6px 14px;
+        border-radius: 100px;
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--accent);
+        letter-spacing: 0.03em;
+        margin-bottom: 28px;
+      }
 
-    .hero-badge .dot {
-      width: 6px;
-      height: 6px;
-      border-radius: 50%;
-      background: var(--accent);
-      animation: pulse-dot 2s ease-in-out infinite;
-    }
+      .hero-badge .dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: var(--accent);
+        animation: pulse-dot 2s ease-in-out infinite;
+      }
 
-    @keyframes pulse-dot {
-      0%, 100% { opacity: 0.5; transform: scale(1); }
-      50% { opacity: 1; transform: scale(1.3); }
-    }
+      @keyframes pulse-dot {
+        0%,
+        100% {
+          opacity: 0.5;
+          transform: scale(1);
+        }
+        50% {
+          opacity: 1;
+          transform: scale(1.3);
+        }
+      }
 
-    h1 {
-      font-size: clamp(36px, 5vw, 56px);
-      font-weight: 700;
-      line-height: 1.1;
-      letter-spacing: -0.03em;
-      margin-bottom: 20px;
-    }
+      h1 {
+        font-size: clamp(36px, 5vw, 56px);
+        font-weight: 700;
+        line-height: 1.1;
+        letter-spacing: -0.03em;
+        margin-bottom: 20px;
+      }
 
-    h1 .gradient {
-      background: linear-gradient(135deg, var(--accent) 0%, var(--accent-light) 40%, var(--violet) 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-    }
+      h1 .gradient {
+        background: linear-gradient(
+          135deg,
+          var(--accent) 0%,
+          var(--accent-light) 40%,
+          var(--violet) 100%
+        );
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+      }
 
-    .hero-subtitle {
-      font-size: clamp(16px, 2vw, 19px);
-      color: var(--text-secondary);
-      line-height: 1.6;
-      margin-bottom: 36px;
-      max-width: 440px;
-    }
+      .hero-subtitle {
+        font-size: clamp(16px, 2vw, 19px);
+        color: var(--text-secondary);
+        line-height: 1.6;
+        margin-bottom: 36px;
+        max-width: 440px;
+      }
 
-    .hero-actions {
-      display: flex;
-      gap: 14px;
-      flex-wrap: wrap;
-    }
+      .hero-actions {
+        display: flex;
+        gap: 14px;
+        flex-wrap: wrap;
+      }
 
-    .btn {
-      display: inline-flex;
-      align-items: center;
-      gap: 10px;
-      padding: 14px 28px;
-      border-radius: 12px;
-      font-size: 15px;
-      font-weight: 600;
-      font-family: var(--font);
-      cursor: pointer;
-      border: none;
-      transition: all 0.2s;
-    }
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        padding: 14px 28px;
+        border-radius: 12px;
+        font-size: 15px;
+        font-weight: 600;
+        font-family: var(--font);
+        cursor: pointer;
+        border: none;
+        transition: all 0.2s;
+      }
 
-    .btn-primary {
-      background: var(--accent);
-      color: #fff;
-    }
+      .btn-primary {
+        background: var(--accent);
+        color: #fff;
+      }
 
-    .btn-primary:hover {
-      background: var(--accent-light);
-      color: #fff;
-      transform: translateY(-1px);
-      box-shadow: 0 8px 30px rgba(123, 147, 245, 0.25);
-    }
+      .btn-primary:hover {
+        background: var(--accent-light);
+        color: #fff;
+        transform: translateY(-1px);
+        box-shadow: 0 8px 30px rgba(123, 147, 245, 0.25);
+      }
 
-    .btn-secondary {
-      background: var(--surface-2);
-      color: var(--text);
-      border: 1px solid var(--border);
-    }
+      .btn-secondary {
+        background: var(--surface-2);
+        color: var(--text);
+        border: 1px solid var(--border);
+      }
 
-    .btn-secondary:hover {
-      background: var(--surface-3);
-      color: var(--text);
-      transform: translateY(-1px);
-    }
+      .btn-secondary:hover {
+        background: var(--surface-3);
+        color: var(--text);
+        transform: translateY(-1px);
+      }
 
-    .btn svg { width: 18px; height: 18px; }
+      .btn svg {
+        width: 18px;
+        height: 18px;
+      }
 
-    .hero-meta {
-      display: flex;
-      gap: 28px;
-      margin-top: 32px;
-    }
+      .hero-meta {
+        display: flex;
+        gap: 28px;
+        margin-top: 32px;
+      }
 
-    .hero-meta-item {
-      font-size: 12px;
-      color: var(--text-muted);
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
+      .hero-meta-item {
+        font-size: 12px;
+        color: var(--text-muted);
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
 
-    .hero-meta-item svg { width: 14px; height: 14px; stroke: var(--text-muted); }
+      .hero-meta-item svg {
+        width: 14px;
+        height: 14px;
+        stroke: var(--text-muted);
+      }
 
-    /* Phone mockup */
-    .hero-visual {
-      position: relative;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-    }
+      /* Phone mockup */
+      .hero-visual {
+        position: relative;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
 
-    .phone-frame {
-      width: 280px;
-      background: var(--bg);
-      border-radius: 32px;
-      border: 2px solid var(--border);
-      padding: 12px;
-      box-shadow:
-        0 40px 80px rgba(0,0,0,0.5),
-        0 0 0 1px rgba(255,255,255,0.03) inset;
-      position: relative;
-      z-index: 2;
-      overflow: hidden;
-    }
+      .phone-frame {
+        width: 280px;
+        background: var(--bg);
+        border-radius: 32px;
+        border: 2px solid var(--border);
+        padding: 12px;
+        box-shadow:
+          0 40px 80px rgba(0, 0, 0, 0.5),
+          0 0 0 1px rgba(255, 255, 255, 0.03) inset;
+        position: relative;
+        z-index: 2;
+        overflow: hidden;
+      }
 
-    .phone-notch {
-      width: 100px;
-      height: 24px;
-      background: var(--bg);
-      border-radius: 0 0 16px 16px;
-      margin: -12px auto 8px;
-      position: relative;
-      z-index: 3;
-    }
+      .phone-notch {
+        width: 100px;
+        height: 24px;
+        background: var(--bg);
+        border-radius: 0 0 16px 16px;
+        margin: -12px auto 8px;
+        position: relative;
+        z-index: 3;
+      }
 
-    .phone-screen {
-      background: var(--bg-elevated);
-      border-radius: 20px;
-      padding: 14px;
-      min-height: 460px;
-      display: flex;
-      flex-direction: column;
-    }
+      .phone-screen {
+        background: var(--bg-elevated);
+        border-radius: 20px;
+        padding: 14px;
+        min-height: 460px;
+        display: flex;
+        flex-direction: column;
+      }
 
-    .phone-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 16px;
-      padding: 0 2px;
-    }
+      .phone-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 16px;
+        padding: 0 2px;
+      }
 
-    .phone-campaign {
-      font-size: 13px;
-      font-weight: 500;
-      color: var(--text-secondary);
-    }
+      .phone-campaign {
+        font-size: 13px;
+        font-weight: 500;
+        color: var(--text-secondary);
+      }
 
-    .phone-status {
-      width: 7px;
-      height: 7px;
-      border-radius: 50%;
-      background: var(--emerald);
-      box-shadow: 0 0 8px rgba(45, 154, 93, 0.4);
-    }
+      .phone-status {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: var(--emerald);
+        box-shadow: 0 0 8px rgba(45, 154, 93, 0.4);
+      }
 
-    .phone-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
-      flex: 1;
-    }
+      .phone-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+        flex: 1;
+      }
 
-    .phone-card {
-      border-radius: 12px;
-      padding: 14px 12px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      border: 1px solid;
-      transition: all 0.4s ease;
-      position: relative;
-      min-height: 78px;
-    }
+      .phone-card {
+        border-radius: 12px;
+        padding: 14px 12px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        border: 1px solid;
+        transition: all 0.4s ease;
+        position: relative;
+        min-height: 78px;
+      }
 
-    .phone-card-icon {
-      font-size: 22px;
-      line-height: 1;
-    }
+      .phone-card-icon {
+        font-size: 22px;
+        line-height: 1;
+      }
 
-    .phone-card-name {
-      font-size: 11px;
-      font-weight: 600;
-      color: var(--text);
-      letter-spacing: 0.01em;
-    }
+      .phone-card-name {
+        font-size: 11px;
+        font-weight: 600;
+        color: var(--text);
+        letter-spacing: 0.01em;
+      }
 
-    .phone-card.active {
-      box-shadow: 0 0 20px var(--card-glow), 0 0 40px var(--card-glow-wide);
-      animation: card-glow 3s ease-in-out infinite;
-    }
+      .phone-card.active {
+        box-shadow:
+          0 0 20px var(--card-glow),
+          0 0 40px var(--card-glow-wide);
+        animation: card-glow 3s ease-in-out infinite;
+      }
 
-    @keyframes card-glow {
-      0%, 100% { filter: brightness(1); }
-      50% { filter: brightness(1.08); }
-    }
+      @keyframes card-glow {
+        0%,
+        100% {
+          filter: brightness(1);
+        }
+        50% {
+          filter: brightness(1.08);
+        }
+      }
 
-    .phone-now-playing {
-      background: var(--surface-1);
-      border-radius: 10px;
-      padding: 10px 12px;
-      margin-top: 12px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
+      .phone-now-playing {
+        background: var(--surface-1);
+        border-radius: 10px;
+        padding: 10px 12px;
+        margin-top: 12px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
 
-    .phone-now-playing .track { font-size: 11px; color: var(--text-secondary); }
-    .phone-now-playing .skip { font-size: 14px; color: var(--text-muted); cursor: pointer; }
+      .phone-now-playing .track {
+        font-size: 11px;
+        color: var(--text-secondary);
+      }
+      .phone-now-playing .skip {
+        font-size: 14px;
+        color: var(--text-muted);
+        cursor: pointer;
+      }
 
-    .phone-controls {
-      margin-top: 10px;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      padding: 0 4px;
-    }
+      .phone-controls {
+        margin-top: 10px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 0 4px;
+      }
 
-    .phone-vol-icon { font-size: 13px; color: var(--text-muted); }
+      .phone-vol-icon {
+        font-size: 13px;
+        color: var(--text-muted);
+      }
 
-    .phone-slider {
-      flex: 1;
-      height: 4px;
-      background: var(--surface-3);
-      border-radius: 4px;
-      position: relative;
-    }
+      .phone-slider {
+        flex: 1;
+        height: 4px;
+        background: var(--surface-3);
+        border-radius: 4px;
+        position: relative;
+      }
 
-    .phone-slider-fill {
-      width: 68%;
-      height: 100%;
-      background: var(--accent);
-      border-radius: 4px;
-      opacity: 0.7;
-    }
+      .phone-slider-fill {
+        width: 68%;
+        height: 100%;
+        background: var(--accent);
+        border-radius: 4px;
+        opacity: 0.7;
+      }
 
-    .phone-slider-thumb {
-      width: 12px;
-      height: 12px;
-      background: var(--accent);
-      border-radius: 50%;
-      position: absolute;
-      top: -4px;
-      left: 66%;
-      border: 2px solid var(--bg-elevated);
-    }
+      .phone-slider-thumb {
+        width: 12px;
+        height: 12px;
+        background: var(--accent);
+        border-radius: 50%;
+        position: absolute;
+        top: -4px;
+        left: 66%;
+        border: 2px solid var(--bg-elevated);
+      }
 
-    /* Desktop floating behind phone */
-    .desktop-float {
-      position: absolute;
-      top: 30px;
-      left: -60px;
-      width: 320px;
-      background: var(--surface-1);
-      border-radius: 12px;
-      border: 1px solid var(--border);
-      padding: 16px;
-      box-shadow: 0 20px 60px rgba(0,0,0,0.4);
-      z-index: 1;
-      opacity: 0.7;
-    }
+      /* Desktop floating behind phone */
+      .desktop-float {
+        position: absolute;
+        top: 30px;
+        left: -60px;
+        width: 320px;
+        background: var(--surface-1);
+        border-radius: 12px;
+        border: 1px solid var(--border);
+        padding: 16px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+        z-index: 1;
+        opacity: 0.7;
+      }
 
-    .desktop-float-bar {
-      display: flex;
-      gap: 6px;
-      margin-bottom: 12px;
-    }
+      .desktop-float-bar {
+        display: flex;
+        gap: 6px;
+        margin-bottom: 12px;
+      }
 
-    .desktop-float-dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      background: var(--surface-3);
-    }
+      .desktop-float-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: var(--surface-3);
+      }
 
-    .desktop-float-sidebar {
-      width: 70px;
-      float: left;
-      margin-right: 12px;
-    }
+      .desktop-float-sidebar {
+        width: 70px;
+        float: left;
+        margin-right: 12px;
+      }
 
-    .desktop-float-sidebar div {
-      height: 8px;
-      background: var(--surface-2);
-      border-radius: 4px;
-      margin-bottom: 6px;
-    }
+      .desktop-float-sidebar div {
+        height: 8px;
+        background: var(--surface-2);
+        border-radius: 4px;
+        margin-bottom: 6px;
+      }
 
-    .desktop-float-sidebar div:first-child {
-      background: var(--accent-dim);
-      width: 80%;
-    }
+      .desktop-float-sidebar div:first-child {
+        background: var(--accent-dim);
+        width: 80%;
+      }
 
-    .desktop-float-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr 1fr;
-      gap: 6px;
-    }
+      .desktop-float-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 6px;
+      }
 
-    .desktop-float-card {
-      height: 32px;
-      border-radius: 6px;
-      border-left: 2px solid;
-      background: var(--surface-2);
-    }
+      .desktop-float-card {
+        height: 32px;
+        border-radius: 6px;
+        border-left: 2px solid;
+        background: var(--surface-2);
+      }
 
-    /* ================================================
+      /* ================================================
        SECTIONS — SHARED
        ================================================ */
-    section {
-      padding: 100px 0;
-      position: relative;
-    }
+      section {
+        padding: 100px 0;
+        position: relative;
+      }
 
-    .section-label {
-      font-size: 11px;
-      font-weight: 600;
-      letter-spacing: 0.15em;
-      text-transform: uppercase;
-      color: var(--accent);
-      margin-bottom: 16px;
-    }
+      .section-label {
+        font-size: 11px;
+        font-weight: 600;
+        letter-spacing: 0.15em;
+        text-transform: uppercase;
+        color: var(--accent);
+        margin-bottom: 16px;
+      }
 
-    .section-title {
-      font-size: clamp(28px, 4vw, 42px);
-      font-weight: 700;
-      letter-spacing: -0.025em;
-      line-height: 1.15;
-      margin-bottom: 16px;
-    }
+      .section-title {
+        font-size: clamp(28px, 4vw, 42px);
+        font-weight: 700;
+        letter-spacing: -0.025em;
+        line-height: 1.15;
+        margin-bottom: 16px;
+      }
 
-    .section-subtitle {
-      font-size: clamp(15px, 1.8vw, 18px);
-      color: var(--text-secondary);
-      max-width: 560px;
-      line-height: 1.65;
-    }
+      .section-subtitle {
+        font-size: clamp(15px, 1.8vw, 18px);
+        color: var(--text-secondary);
+        max-width: 560px;
+        line-height: 1.65;
+      }
 
-    /* ================================================
+      /* ================================================
        PROBLEM SECTION
        ================================================ */
-    .problem {
-      border-top: 1px solid var(--border-subtle);
-      background: var(--bg-elevated);
-    }
+      .problem {
+        border-top: 1px solid var(--border-subtle);
+        background: var(--bg-elevated);
+      }
 
-    .problem-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr 1fr;
-      gap: 24px;
-      margin-top: 56px;
-    }
+      .problem-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 24px;
+        margin-top: 56px;
+      }
 
-    .pain-card {
-      background: var(--surface-1);
-      border: 1px solid var(--border-subtle);
-      border-radius: 16px;
-      padding: 32px 28px;
-      position: relative;
-      overflow: hidden;
-    }
+      .pain-card {
+        background: var(--surface-1);
+        border: 1px solid var(--border-subtle);
+        border-radius: 16px;
+        padding: 32px 28px;
+        position: relative;
+        overflow: hidden;
+      }
 
-    .pain-card::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      height: 2px;
-      background: linear-gradient(90deg, var(--crimson) 0%, transparent 100%);
-      opacity: 0.5;
-    }
+      .pain-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 2px;
+        background: linear-gradient(90deg, var(--crimson) 0%, transparent 100%);
+        opacity: 0.5;
+      }
 
-    .pain-icon {
-      font-size: 28px;
-      margin-bottom: 16px;
-    }
+      .pain-icon {
+        font-size: 28px;
+        margin-bottom: 16px;
+      }
 
-    .pain-title {
-      font-size: 16px;
-      font-weight: 600;
-      margin-bottom: 8px;
-    }
+      .pain-title {
+        font-size: 16px;
+        font-weight: 600;
+        margin-bottom: 8px;
+      }
 
-    .pain-desc {
-      font-size: 14px;
-      color: var(--text-secondary);
-      line-height: 1.6;
-    }
+      .pain-desc {
+        font-size: 14px;
+        color: var(--text-secondary);
+        line-height: 1.6;
+      }
 
-    /* ================================================
+      /* ================================================
        HOW IT WORKS
        ================================================ */
-    .how-it-works { background: var(--bg); }
+      .how-it-works {
+        background: var(--bg);
+      }
 
-    .steps {
-      display: grid;
-      grid-template-columns: 1fr 1fr 1fr;
-      gap: 40px;
-      margin-top: 56px;
-    }
+      .steps {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 40px;
+        margin-top: 56px;
+      }
 
-    .step {
-      position: relative;
-    }
+      .step {
+        position: relative;
+      }
 
-    .step-number {
-      font-size: 64px;
-      font-weight: 700;
-      color: var(--surface-2);
-      line-height: 1;
-      margin-bottom: 16px;
-      font-family: var(--font);
-      letter-spacing: -0.04em;
-    }
+      .step-number {
+        font-size: 64px;
+        font-weight: 700;
+        color: var(--surface-2);
+        line-height: 1;
+        margin-bottom: 16px;
+        font-family: var(--font);
+        letter-spacing: -0.04em;
+      }
 
-    .step-title {
-      font-size: 18px;
-      font-weight: 600;
-      margin-bottom: 8px;
-    }
+      .step-title {
+        font-size: 18px;
+        font-weight: 600;
+        margin-bottom: 8px;
+      }
 
-    .step-desc {
-      font-size: 14px;
-      color: var(--text-secondary);
-      line-height: 1.65;
-    }
+      .step-desc {
+        font-size: 14px;
+        color: var(--text-secondary);
+        line-height: 1.65;
+      }
 
-    .step-highlight {
-      color: var(--accent);
-      font-weight: 500;
-    }
+      .step-highlight {
+        color: var(--accent);
+        font-weight: 500;
+      }
 
-    /* ================================================
+      /* ================================================
        FEATURES
        ================================================ */
-    .features { background: var(--bg-elevated); border-top: 1px solid var(--border-subtle); }
+      .features {
+        background: var(--bg-elevated);
+        border-top: 1px solid var(--border-subtle);
+      }
 
-    .features-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 20px;
-      margin-top: 56px;
-    }
+      .features-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 20px;
+        margin-top: 56px;
+      }
 
-    .feature-card {
-      background: var(--surface-1);
-      border: 1px solid var(--border-subtle);
-      border-radius: 16px;
-      padding: 32px 28px;
-      transition: border-color 0.3s, transform 0.3s;
-    }
+      .feature-card {
+        background: var(--surface-1);
+        border: 1px solid var(--border-subtle);
+        border-radius: 16px;
+        padding: 32px 28px;
+        transition:
+          border-color 0.3s,
+          transform 0.3s;
+      }
 
-    .feature-card:hover {
-      border-color: var(--border);
-      transform: translateY(-2px);
-    }
+      .feature-card:hover {
+        border-color: var(--border);
+        transform: translateY(-2px);
+      }
 
-    .feature-icon {
-      width: 44px;
-      height: 44px;
-      border-radius: 12px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 20px;
-      margin-bottom: 20px;
-    }
+      .feature-icon {
+        width: 44px;
+        height: 44px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 20px;
+        margin-bottom: 20px;
+      }
 
-    .feature-title {
-      font-size: 16px;
-      font-weight: 600;
-      margin-bottom: 8px;
-    }
+      .feature-title {
+        font-size: 16px;
+        font-weight: 600;
+        margin-bottom: 8px;
+      }
 
-    .feature-desc {
-      font-size: 14px;
-      color: var(--text-secondary);
-      line-height: 1.6;
-    }
+      .feature-desc {
+        font-size: 14px;
+        color: var(--text-secondary);
+        line-height: 1.6;
+      }
 
-    /* Feature card big — spans 2 cols */
-    .feature-card.wide {
-      grid-column: span 2;
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 40px;
-      align-items: center;
-    }
+      /* Feature card big — spans 2 cols */
+      .feature-card.wide {
+        grid-column: span 2;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 40px;
+        align-items: center;
+      }
 
-    .feature-card.wide .feature-content { order: 1; }
+      .feature-card.wide .feature-content {
+        order: 1;
+      }
 
-    .climate-demo {
-      order: 2;
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 8px;
-    }
+      .climate-demo {
+        order: 2;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+      }
 
-    .climate-chip {
-      border-radius: 10px;
-      padding: 12px 10px;
-      text-align: center;
-      font-size: 10px;
-      font-weight: 600;
-      color: var(--text);
-      border: 1px solid;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 5px;
-    }
+      .climate-chip {
+        border-radius: 10px;
+        padding: 12px 10px;
+        text-align: center;
+        font-size: 10px;
+        font-weight: 600;
+        color: var(--text);
+        border: 1px solid;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 5px;
+      }
 
-    .climate-chip-icon { font-size: 18px; }
+      .climate-chip-icon {
+        font-size: 18px;
+      }
 
-    /* ================================================
+      /* ================================================
        OPEN SOURCE
        ================================================ */
-    .opensource { background: var(--bg); }
+      .opensource {
+        background: var(--bg);
+      }
 
-    .os-content {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 64px;
-      align-items: center;
-      margin-top: 56px;
-    }
+      .os-content {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 64px;
+        align-items: center;
+        margin-top: 56px;
+      }
 
-    .os-points { display: flex; flex-direction: column; gap: 20px; }
+      .os-points {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+      }
 
-    .os-point {
-      display: flex;
-      gap: 14px;
-      align-items: flex-start;
-    }
+      .os-point {
+        display: flex;
+        gap: 14px;
+        align-items: flex-start;
+      }
 
-    .os-point-icon {
-      width: 36px;
-      height: 36px;
-      min-width: 36px;
-      border-radius: 10px;
-      background: var(--accent-dim);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 16px;
-    }
+      .os-point-icon {
+        width: 36px;
+        height: 36px;
+        min-width: 36px;
+        border-radius: 10px;
+        background: var(--accent-dim);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 16px;
+      }
 
-    .os-point-title {
-      font-size: 15px;
-      font-weight: 600;
-      margin-bottom: 2px;
-    }
+      .os-point-title {
+        font-size: 15px;
+        font-weight: 600;
+        margin-bottom: 2px;
+      }
 
-    .os-point-desc {
-      font-size: 13px;
-      color: var(--text-secondary);
-      line-height: 1.55;
-    }
+      .os-point-desc {
+        font-size: 13px;
+        color: var(--text-secondary);
+        line-height: 1.55;
+      }
 
-    .code-block {
-      background: var(--surface-1);
-      border: 1px solid var(--border-subtle);
-      border-radius: 14px;
-      padding: 24px;
-      overflow-x: auto;
-    }
+      .code-block {
+        background: var(--surface-1);
+        border: 1px solid var(--border-subtle);
+        border-radius: 14px;
+        padding: 24px;
+        overflow-x: auto;
+      }
 
-    .code-block pre {
-      font-family: var(--mono);
-      font-size: 13px;
-      line-height: 1.7;
-      color: var(--text-secondary);
-    }
+      .code-block pre {
+        font-family: var(--mono);
+        font-size: 13px;
+        line-height: 1.7;
+        color: var(--text-secondary);
+      }
 
-    .code-block .comment { color: var(--text-muted); }
-    .code-block .cmd { color: var(--accent); }
-    .code-block .flag { color: var(--violet); }
+      .code-block .comment {
+        color: var(--text-muted);
+      }
+      .code-block .cmd {
+        color: var(--accent);
+      }
+      .code-block .flag {
+        color: var(--violet);
+      }
 
-    /* ================================================
+      /* ================================================
        CTA
        ================================================ */
-    .cta {
-      background: var(--bg-elevated);
-      border-top: 1px solid var(--border-subtle);
-      text-align: center;
-      padding: 120px 0;
-    }
+      .cta {
+        background: var(--bg-elevated);
+        border-top: 1px solid var(--border-subtle);
+        text-align: center;
+        padding: 120px 0;
+      }
 
-    .cta .section-title { margin-bottom: 12px; }
-    .cta .section-subtitle { margin: 0 auto 40px; }
+      .cta .section-title {
+        margin-bottom: 12px;
+      }
+      .cta .section-subtitle {
+        margin: 0 auto 40px;
+      }
 
-    .cta-actions {
-      display: flex;
-      gap: 14px;
-      justify-content: center;
-      flex-wrap: wrap;
-    }
+      .cta-actions {
+        display: flex;
+        gap: 14px;
+        justify-content: center;
+        flex-wrap: wrap;
+      }
 
-    .platform-tags {
-      display: flex;
-      gap: 24px;
-      justify-content: center;
-      margin-top: 24px;
-    }
+      .platform-tags {
+        display: flex;
+        gap: 24px;
+        justify-content: center;
+        margin-top: 24px;
+      }
 
-    .platform-tag {
-      font-size: 12px;
-      color: var(--text-muted);
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
+      .platform-tag {
+        font-size: 12px;
+        color: var(--text-muted);
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
 
-    .platform-tag svg { width: 16px; height: 16px; }
+      .platform-tag svg {
+        width: 16px;
+        height: 16px;
+      }
 
-    /* ================================================
+      /* ================================================
        FOOTER
        ================================================ */
-    footer {
-      background: var(--bg);
-      border-top: 1px solid var(--border-subtle);
-      padding: 48px 0;
-    }
+      footer {
+        background: var(--bg);
+        border-top: 1px solid var(--border-subtle);
+        padding: 48px 0;
+      }
 
-    .footer-inner {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
+      .footer-inner {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
 
-    .footer-left {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
+      .footer-left {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
 
-    .footer-left svg { width: 22px; height: 22px; }
+      .footer-left svg {
+        width: 22px;
+        height: 22px;
+      }
 
-    .footer-left span {
-      font-size: 14px;
-      font-weight: 400;
-      letter-spacing: 0.12em;
-      color: var(--text-secondary);
-    }
+      .footer-left span {
+        font-size: 14px;
+        font-weight: 400;
+        letter-spacing: 0.12em;
+        color: var(--text-secondary);
+      }
 
-    .footer-links {
-      display: flex;
-      gap: 28px;
-      list-style: none;
-    }
+      .footer-links {
+        display: flex;
+        gap: 28px;
+        list-style: none;
+      }
 
-    .footer-links a {
-      font-size: 13px;
-      color: var(--text-muted);
-    }
+      .footer-links a {
+        font-size: 13px;
+        color: var(--text-muted);
+      }
 
-    .footer-links a:hover { color: var(--text-secondary); }
+      .footer-links a:hover {
+        color: var(--text-secondary);
+      }
 
-    /* ================================================
+      /* ================================================
        SCROLL ANIMATIONS
        ================================================ */
-    .reveal {
-      opacity: 0;
-      transform: translateY(24px);
-      transition: opacity 0.7s ease, transform 0.7s ease;
-    }
+      .reveal {
+        opacity: 0;
+        transform: translateY(24px);
+        transition:
+          opacity 0.7s ease,
+          transform 0.7s ease;
+      }
 
-    .reveal.visible {
-      opacity: 1;
-      transform: translateY(0);
-    }
+      .reveal.visible {
+        opacity: 1;
+        transform: translateY(0);
+      }
 
-    .reveal-delay-1 { transition-delay: 0.1s; }
-    .reveal-delay-2 { transition-delay: 0.2s; }
-    .reveal-delay-3 { transition-delay: 0.3s; }
-    .reveal-delay-4 { transition-delay: 0.4s; }
+      .reveal-delay-1 {
+        transition-delay: 0.1s;
+      }
+      .reveal-delay-2 {
+        transition-delay: 0.2s;
+      }
+      .reveal-delay-3 {
+        transition-delay: 0.3s;
+      }
+      .reveal-delay-4 {
+        transition-delay: 0.4s;
+      }
 
-    /* ================================================
+      /* ================================================
        RESPONSIVE
        ================================================ */
-    @media (max-width: 900px) {
-      .hero-inner {
-        grid-template-columns: 1fr;
-        gap: 60px;
-        text-align: center;
+      @media (max-width: 900px) {
+        .hero-inner {
+          grid-template-columns: 1fr;
+          gap: 60px;
+          text-align: center;
+        }
+        .hero-content {
+          max-width: 100%;
+        }
+        .hero-subtitle {
+          max-width: 100%;
+        }
+        .hero-actions {
+          justify-content: center;
+        }
+        .hero-meta {
+          justify-content: center;
+        }
+        .hero-visual {
+          order: -1;
+        }
+        .desktop-float {
+          display: none;
+        }
+        .phone-frame {
+          width: 260px;
+        }
+        .phone-screen {
+          min-height: 400px;
+        }
+        .problem-grid {
+          grid-template-columns: 1fr;
+          gap: 16px;
+        }
+        .steps {
+          grid-template-columns: 1fr;
+          gap: 32px;
+        }
+        .features-grid {
+          grid-template-columns: 1fr;
+        }
+        .feature-card.wide {
+          grid-column: span 1;
+          grid-template-columns: 1fr;
+          gap: 24px;
+        }
+        .os-content {
+          grid-template-columns: 1fr;
+          gap: 40px;
+        }
+        .nav-links {
+          display: none;
+        }
+        .hamburger {
+          display: flex;
+        }
       }
-      .hero-content { max-width: 100%; }
-      .hero-subtitle { max-width: 100%; }
-      .hero-actions { justify-content: center; }
-      .hero-meta { justify-content: center; }
-      .hero-visual { order: -1; }
-      .desktop-float { display: none; }
-      .phone-frame { width: 260px; }
-      .phone-screen { min-height: 400px; }
-      .problem-grid { grid-template-columns: 1fr; gap: 16px; }
-      .steps { grid-template-columns: 1fr; gap: 32px; }
-      .features-grid { grid-template-columns: 1fr; }
-      .feature-card.wide { grid-column: span 1; grid-template-columns: 1fr; gap: 24px; }
-      .os-content { grid-template-columns: 1fr; gap: 40px; }
-      .nav-links { display: none; }
-      .hamburger { display: flex; }
-    }
 
-    @media (max-width: 600px) {
-      .container { padding: 0 18px; }
-      section { padding: 72px 0; }
-      .hero { padding: 80px 0 40px; }
-      .btn { padding: 12px 22px; font-size: 14px; }
-      .phone-frame { width: 240px; }
-      .cta { padding: 80px 0; }
-      .footer-inner { flex-direction: column; gap: 20px; text-align: center; }
-      .footer-links { gap: 18px; flex-wrap: wrap; justify-content: center; }
-    }
+      @media (max-width: 600px) {
+        .container {
+          padding: 0 18px;
+        }
+        section {
+          padding: 72px 0;
+        }
+        .hero {
+          padding: 80px 0 40px;
+        }
+        .btn {
+          padding: 12px 22px;
+          font-size: 14px;
+        }
+        .phone-frame {
+          width: 240px;
+        }
+        .cta {
+          padding: 80px 0;
+        }
+        .footer-inner {
+          flex-direction: column;
+          gap: 20px;
+          text-align: center;
+        }
+        .footer-links {
+          gap: 18px;
+          flex-wrap: wrap;
+          justify-content: center;
+        }
+      }
 
-    @media (max-width: 420px) {
-      .hero-actions { flex-direction: column; align-items: stretch; }
-      .btn { justify-content: center; }
-      .hero-meta { flex-direction: column; gap: 8px; align-items: center; }
-    }
+      @media (max-width: 420px) {
+        .hero-actions {
+          flex-direction: column;
+          align-items: stretch;
+        }
+        .btn {
+          justify-content: center;
+        }
+        .hero-meta {
+          flex-direction: column;
+          gap: 8px;
+          align-items: center;
+        }
+      }
 
-    /* Reduced motion */
-    @media (prefers-reduced-motion: reduce) {
-      html { scroll-behavior: auto; }
-      .reveal { transition: none; opacity: 1; transform: none; }
-      .phone-card.active { animation: none; }
-      .hero-badge .dot { animation: none; opacity: 1; }
-      .logomark::before { animation: none; }
-    }
-  </style>
-</head>
-<body>
+      /* Reduced motion */
+      @media (prefers-reduced-motion: reduce) {
+        html {
+          scroll-behavior: auto;
+        }
+        .reveal {
+          transition: none;
+          opacity: 1;
+          transform: none;
+        }
+        .phone-card.active {
+          animation: none;
+        }
+        .hero-badge .dot {
+          animation: none;
+          opacity: 1;
+        }
+        .logomark::before {
+          animation: none;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <!-- ========== NAV ========== -->
+    <nav id="nav">
+      <div class="nav-inner">
+        <a href="#" class="nav-logo" aria-label="Ambora home">
+          <svg viewBox="-80 -80 160 160" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path
+              d="M -14,44 A 52,52 0 0,1 -14,-44"
+              stroke="#7B93F5"
+              stroke-width="4"
+              stroke-linecap="round"
+              opacity="0.65"
+            />
+            <path
+              d="M -10,28 A 34,34 0 0,1 -10,-28"
+              stroke="#7B93F5"
+              stroke-width="5"
+              stroke-linecap="round"
+              opacity="0.9"
+            />
+            <path
+              d="M 10,28 A 34,34 0 0,0 10,-28"
+              stroke="#95A8F8"
+              stroke-width="5"
+              stroke-linecap="round"
+              opacity="0.9"
+            />
+            <path
+              d="M 14,44 A 52,52 0 0,0 14,-44"
+              stroke="#95A8F8"
+              stroke-width="4"
+              stroke-linecap="round"
+              opacity="0.65"
+            />
+            <circle cx="0" cy="0" r="3.5" fill="#EAEAED" opacity="0.9" />
+          </svg>
+          <span>AMBORA</span>
+        </a>
+        <ul class="nav-links">
+          <li><a href="#features">Features</a></li>
+          <li><a href="#how-it-works">How It Works</a></li>
+          <li><a href="#open-source">Open Source</a></li>
+          <li><a href="#download" class="nav-cta">Download</a></li>
+        </ul>
+        <button
+          class="hamburger"
+          aria-label="Toggle menu"
+          onclick="document.querySelector('.mobile-menu').classList.toggle('open')"
+        >
+          <span></span><span></span><span></span>
+        </button>
+      </div>
+    </nav>
 
-  <!-- ========== NAV ========== -->
-  <nav id="nav">
-    <div class="nav-inner">
-      <a href="#" class="nav-logo" aria-label="Ambora home">
-        <svg viewBox="-80 -80 160 160" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M -14,44 A 52,52 0 0,1 -14,-44" stroke="#7B93F5" stroke-width="4" stroke-linecap="round" opacity="0.65"/>
-          <path d="M -10,28 A 34,34 0 0,1 -10,-28" stroke="#7B93F5" stroke-width="5" stroke-linecap="round" opacity="0.9"/>
-          <path d="M 10,28 A 34,34 0 0,0 10,-28" stroke="#95A8F8" stroke-width="5" stroke-linecap="round" opacity="0.9"/>
-          <path d="M 14,44 A 52,52 0 0,0 14,-44" stroke="#95A8F8" stroke-width="4" stroke-linecap="round" opacity="0.65"/>
-          <circle cx="0" cy="0" r="3.5" fill="#EAEAED" opacity="0.9"/>
-        </svg>
-        <span>AMBORA</span>
-      </a>
-      <ul class="nav-links">
-        <li><a href="#features">Features</a></li>
-        <li><a href="#how-it-works">How It Works</a></li>
-        <li><a href="#open-source">Open Source</a></li>
-        <li><a href="#download" class="nav-cta">Download</a></li>
-      </ul>
-      <button class="hamburger" aria-label="Toggle menu" onclick="document.querySelector('.mobile-menu').classList.toggle('open')">
-        <span></span><span></span><span></span>
-      </button>
+    <div class="mobile-menu">
+      <a href="#features" onclick="this.parentElement.classList.remove('open')">Features</a>
+      <a href="#how-it-works" onclick="this.parentElement.classList.remove('open')">How It Works</a>
+      <a href="#open-source" onclick="this.parentElement.classList.remove('open')">Open Source</a>
+      <a href="#download" onclick="this.parentElement.classList.remove('open')">Download Free</a>
     </div>
-  </nav>
 
-  <div class="mobile-menu">
-    <a href="#features" onclick="this.parentElement.classList.remove('open')">Features</a>
-    <a href="#how-it-works" onclick="this.parentElement.classList.remove('open')">How It Works</a>
-    <a href="#open-source" onclick="this.parentElement.classList.remove('open')">Open Source</a>
-    <a href="#download" onclick="this.parentElement.classList.remove('open')">Download Free</a>
-  </div>
-
-  <!-- ========== HERO ========== -->
-  <section class="hero">
-    <div class="container hero-inner">
-      <div class="hero-content">
-        <div class="hero-badge">
-          <span class="dot"></span>
-          Free &amp; Open Source
-        </div>
-        <h1>Set the mood.<br><span class="gradient">From your phone.</span></h1>
-        <p class="hero-subtitle">Ambora is a desktop app that lets you manage and switch atmospheric music during tabletop RPG sessions — controlled entirely from your phone with one tap.</p>
-        <div class="hero-actions">
-          <a href="#download" class="btn btn-primary">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-            Download for Free
-          </a>
-          <a href="https://github.com/xetorthio/ambora" class="btn btn-secondary" target="_blank" rel="noopener noreferrer">
-            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
-            View on GitHub
-          </a>
-        </div>
-        <div class="hero-meta">
-          <span class="hero-meta-item">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
-            macOS, Windows, Linux
-          </span>
-          <span class="hero-meta-item">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-            No account required
-          </span>
-          <span class="hero-meta-item">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
-            MIT License
-          </span>
-        </div>
-      </div>
-
-      <!-- PHONE MOCKUP -->
-      <div class="hero-visual">
-        <div class="desktop-float">
-          <div class="desktop-float-bar">
-            <div class="desktop-float-dot"></div>
-            <div class="desktop-float-dot"></div>
-            <div class="desktop-float-dot"></div>
+    <!-- ========== HERO ========== -->
+    <section class="hero">
+      <div class="container hero-inner">
+        <div class="hero-content">
+          <div class="hero-badge">
+            <span class="dot"></span>
+            Free &amp; Open Source
           </div>
-          <div class="desktop-float-sidebar">
-            <div style="width: 60%;"></div>
-            <div></div>
-            <div style="width: 90%;"></div>
-            <div style="width: 75%;"></div>
+          <h1>Set the mood.<br /><span class="gradient">From your phone.</span></h1>
+          <p class="hero-subtitle">
+            Ambora is a desktop app that lets you manage and switch atmospheric music during
+            tabletop RPG sessions — controlled entirely from your phone with one tap.
+          </p>
+          <div class="hero-actions">
+            <a href="#download" class="btn btn-primary">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                <polyline points="7 10 12 15 17 10" />
+                <line x1="12" y1="15" x2="12" y2="3" />
+              </svg>
+              Download for Free
+            </a>
+            <a
+              href="https://github.com/xetorthio/ambora"
+              class="btn btn-secondary"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <svg viewBox="0 0 24 24" fill="currentColor">
+                <path
+                  d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"
+                />
+              </svg>
+              View on GitHub
+            </a>
           </div>
-          <div class="desktop-float-grid">
-            <div class="desktop-float-card" style="border-color: rgba(220,53,69,0.5);"></div>
-            <div class="desktop-float-card" style="border-color: rgba(212,148,58,0.5);"></div>
-            <div class="desktop-float-card" style="border-color: rgba(45,154,93,0.5);"></div>
-            <div class="desktop-float-card" style="border-color: rgba(102,89,217,0.5);"></div>
-            <div class="desktop-float-card" style="border-color: rgba(75,107,212,0.5);"></div>
-            <div class="desktop-float-card" style="border-color: rgba(139,73,184,0.5);"></div>
+          <div class="hero-meta">
+            <span class="hero-meta-item">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="2" y="3" width="20" height="14" rx="2" />
+                <line x1="8" y1="21" x2="16" y2="21" />
+                <line x1="12" y1="17" x2="12" y2="21" />
+              </svg>
+              macOS, Windows, Linux
+            </span>
+            <span class="hero-meta-item">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+              </svg>
+              No account required
+            </span>
+            <span class="hero-meta-item">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="16 18 22 12 16 6" />
+                <polyline points="8 6 2 12 8 18" />
+              </svg>
+              MIT License
+            </span>
           </div>
         </div>
 
-        <div class="phone-frame">
-          <div class="phone-notch"></div>
-          <div class="phone-screen">
-            <div class="phone-header">
-              <span class="phone-campaign">The Lost Mines ▾</span>
-              <div class="phone-status"></div>
+        <!-- PHONE MOCKUP -->
+        <div class="hero-visual">
+          <div class="desktop-float">
+            <div class="desktop-float-bar">
+              <div class="desktop-float-dot"></div>
+              <div class="desktop-float-dot"></div>
+              <div class="desktop-float-dot"></div>
             </div>
-            <div class="phone-grid">
-              <div class="phone-card active" style="background: rgba(220,53,69,0.18); border-color: rgba(220,53,69,0.6); --card-glow: rgba(220,53,69,0.15); --card-glow-wide: rgba(220,53,69,0.06);">
-                <span class="phone-card-icon">⚔️</span>
-                <span class="phone-card-name">Combat</span>
+            <div class="desktop-float-sidebar">
+              <div style="width: 60%"></div>
+              <div></div>
+              <div style="width: 90%"></div>
+              <div style="width: 75%"></div>
+            </div>
+            <div class="desktop-float-grid">
+              <div class="desktop-float-card" style="border-color: rgba(220, 53, 69, 0.5)"></div>
+              <div class="desktop-float-card" style="border-color: rgba(212, 148, 58, 0.5)"></div>
+              <div class="desktop-float-card" style="border-color: rgba(45, 154, 93, 0.5)"></div>
+              <div class="desktop-float-card" style="border-color: rgba(102, 89, 217, 0.5)"></div>
+              <div class="desktop-float-card" style="border-color: rgba(75, 107, 212, 0.5)"></div>
+              <div class="desktop-float-card" style="border-color: rgba(139, 73, 184, 0.5)"></div>
+            </div>
+          </div>
+
+          <div class="phone-frame">
+            <div class="phone-notch"></div>
+            <div class="phone-screen">
+              <div class="phone-header">
+                <span class="phone-campaign">The Lost Mines ▾</span>
+                <div class="phone-status"></div>
               </div>
-              <div class="phone-card" style="background: rgba(212,148,58,0.12); border-color: rgba(212,148,58,0.25);">
-                <span class="phone-card-icon">🍺</span>
-                <span class="phone-card-name">Tavern</span>
+              <div class="phone-grid">
+                <div
+                  class="phone-card active"
+                  style="
+                    background: rgba(220, 53, 69, 0.18);
+                    border-color: rgba(220, 53, 69, 0.6);
+                    --card-glow: rgba(220, 53, 69, 0.15);
+                    --card-glow-wide: rgba(220, 53, 69, 0.06);
+                  "
+                >
+                  <span class="phone-card-icon">⚔️</span>
+                  <span class="phone-card-name">Combat</span>
+                </div>
+                <div
+                  class="phone-card"
+                  style="
+                    background: rgba(212, 148, 58, 0.12);
+                    border-color: rgba(212, 148, 58, 0.25);
+                  "
+                >
+                  <span class="phone-card-icon">🍺</span>
+                  <span class="phone-card-name">Tavern</span>
+                </div>
+                <div
+                  class="phone-card"
+                  style="background: rgba(45, 154, 93, 0.12); border-color: rgba(45, 154, 93, 0.25)"
+                >
+                  <span class="phone-card-icon">🌲</span>
+                  <span class="phone-card-name">Forest</span>
+                </div>
+                <div
+                  class="phone-card"
+                  style="
+                    background: rgba(102, 89, 217, 0.12);
+                    border-color: rgba(102, 89, 217, 0.25);
+                  "
+                >
+                  <span class="phone-card-icon">🔮</span>
+                  <span class="phone-card-name">Arcane</span>
+                </div>
+                <div
+                  class="phone-card"
+                  style="
+                    background: rgba(75, 107, 212, 0.12);
+                    border-color: rgba(75, 107, 212, 0.25);
+                  "
+                >
+                  <span class="phone-card-icon">❄️</span>
+                  <span class="phone-card-name">Ice Caves</span>
+                </div>
+                <div
+                  class="phone-card"
+                  style="
+                    background: rgba(139, 73, 184, 0.12);
+                    border-color: rgba(139, 73, 184, 0.25);
+                  "
+                >
+                  <span class="phone-card-icon">👁️</span>
+                  <span class="phone-card-name">Mystery</span>
+                </div>
               </div>
-              <div class="phone-card" style="background: rgba(45,154,93,0.12); border-color: rgba(45,154,93,0.25);">
-                <span class="phone-card-icon">🌲</span>
-                <span class="phone-card-name">Forest</span>
+              <div class="phone-now-playing">
+                <span class="track">🎵 Epic Battle Theme — Hanz...</span>
+                <span class="skip">⏭</span>
               </div>
-              <div class="phone-card" style="background: rgba(102,89,217,0.12); border-color: rgba(102,89,217,0.25);">
-                <span class="phone-card-icon">🔮</span>
-                <span class="phone-card-name">Arcane</span>
-              </div>
-              <div class="phone-card" style="background: rgba(75,107,212,0.12); border-color: rgba(75,107,212,0.25);">
-                <span class="phone-card-icon">❄️</span>
-                <span class="phone-card-name">Ice Caves</span>
-              </div>
-              <div class="phone-card" style="background: rgba(139,73,184,0.12); border-color: rgba(139,73,184,0.25);">
-                <span class="phone-card-icon">👁️</span>
-                <span class="phone-card-name">Mystery</span>
-              </div>
-            </div>
-            <div class="phone-now-playing">
-              <span class="track">🎵 Epic Battle Theme — Hanz...</span>
-              <span class="skip">⏭</span>
-            </div>
-            <div class="phone-controls">
-              <span class="phone-vol-icon">🔊</span>
-              <div class="phone-slider">
-                <div class="phone-slider-fill"></div>
-                <div class="phone-slider-thumb"></div>
+              <div class="phone-controls">
+                <span class="phone-vol-icon">🔊</span>
+                <div class="phone-slider">
+                  <div class="phone-slider-fill"></div>
+                  <div class="phone-slider-thumb"></div>
+                </div>
               </div>
             </div>
           </div>
         </div>
       </div>
-    </div>
-  </section>
+    </section>
 
-  <!-- ========== PROBLEM ========== -->
-  <section class="problem" id="problem">
-    <div class="container">
-      <div class="reveal">
-        <div class="section-label">The Problem</div>
-        <div class="section-title">Session music shouldn't fight you</div>
-        <p class="section-subtitle">Every DM knows the struggle. You've curated the perfect playlists — but actually using them mid-session is a nightmare.</p>
-      </div>
-      <div class="problem-grid">
-        <div class="pain-card reveal reveal-delay-1">
-          <div class="pain-icon">🔀</div>
-          <div class="pain-title">Jarring switches</div>
-          <p class="pain-desc">Spotify and YouTube don't crossfade between playlists. Combat music cuts to tavern music with an ugly silence gap or hard switch.</p>
+    <!-- ========== PROBLEM ========== -->
+    <section class="problem" id="problem">
+      <div class="container">
+        <div class="reveal">
+          <div class="section-label">The Problem</div>
+          <div class="section-title">Session music shouldn't fight you</div>
+          <p class="section-subtitle">
+            Every DM knows the struggle. You've curated the perfect playlists — but actually using
+            them mid-session is a nightmare.
+          </p>
         </div>
-        <div class="pain-card reveal reveal-delay-2">
-          <div class="pain-icon">💻</div>
-          <div class="pain-title">Tab juggling</div>
-          <p class="pain-desc">Alt-tabbing to a browser while your players watch you fumble for the right playlist. Mood: killed. Immersion: shattered.</p>
-        </div>
-        <div class="pain-card reveal reveal-delay-3">
-          <div class="pain-icon">🧠</div>
-          <div class="pain-title">Cognitive overhead</div>
-          <p class="pain-desc">You're already managing NPCs, combat, and story. Remembering which playlist goes with which scene is one thing too many.</p>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- ========== HOW IT WORKS ========== -->
-  <section class="how-it-works" id="how-it-works">
-    <div class="container">
-      <div class="reveal">
-        <div class="section-label">How It Works</div>
-        <div class="section-title">Three steps to atmospheric sessions</div>
-      </div>
-      <div class="steps">
-        <div class="step reveal reveal-delay-1">
-          <div class="step-number">01</div>
-          <div class="step-title">Build your soundscape</div>
-          <p class="step-desc">Create a campaign — or start with the <span class="step-highlight">15 pre-built RPG moods</span>. Add climates like combat, tavern, forest, and mystery, each with its own playlist of YouTube or local tracks.</p>
-        </div>
-        <div class="step reveal reveal-delay-2">
-          <div class="step-number">02</div>
-          <div class="step-title">Scan the QR code</div>
-          <p class="step-desc">Ambora starts a local server on your network. Scan the QR with your phone — no app install, no account. Your phone becomes a <span class="step-highlight">remote control</span>.</p>
-        </div>
-        <div class="step reveal reveal-delay-3">
-          <div class="step-number">03</div>
-          <div class="step-title">Tap to set the mood</div>
-          <p class="step-desc">One tap switches climates with a smooth <span class="step-highlight">crossfade</span>. Your players hear the tavern chatter melt into forest ambience. No gap. No break. Pure immersion.</p>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- ========== FEATURES ========== -->
-  <section class="features" id="features">
-    <div class="container">
-      <div class="reveal">
-        <div class="section-label">Features</div>
-        <div class="section-title">Everything a DM needs. Nothing more.</div>
-        <p class="section-subtitle">Ambora focuses on doing one thing exceptionally well — letting you switch musical atmospheres without breaking your flow.</p>
-      </div>
-      <div class="features-grid">
-        <div class="feature-card wide reveal">
-          <div class="feature-content">
-            <div class="feature-icon" style="background: rgba(123,147,245,0.12);">🎨</div>
-            <div class="feature-title">Color-coded climates</div>
-            <p class="feature-desc">Each climate gets its own color and icon — choose from 16 colors and 20 icons. On the phone, they're large, glowing cards you can identify at a glance — even in a dimly lit room.</p>
+        <div class="problem-grid">
+          <div class="pain-card reveal reveal-delay-1">
+            <div class="pain-icon">🔀</div>
+            <div class="pain-title">Jarring switches</div>
+            <p class="pain-desc">
+              Spotify and YouTube don't crossfade between playlists. Combat music cuts to tavern
+              music with an ugly silence gap or hard switch.
+            </p>
           </div>
-          <div class="climate-demo">
-            <div class="climate-chip" style="background: rgba(220,53,69,0.15); border-color: rgba(220,53,69,0.3);">
-              <span class="climate-chip-icon">⚔️</span>Combat
-            </div>
-            <div class="climate-chip" style="background: rgba(212,148,58,0.15); border-color: rgba(212,148,58,0.3);">
-              <span class="climate-chip-icon">🍺</span>Tavern
-            </div>
-            <div class="climate-chip" style="background: rgba(45,154,93,0.15); border-color: rgba(45,154,93,0.3);">
-              <span class="climate-chip-icon">🌲</span>Forest
-            </div>
-            <div class="climate-chip" style="background: rgba(102,89,217,0.15); border-color: rgba(102,89,217,0.3);">
-              <span class="climate-chip-icon">🔮</span>Arcane
-            </div>
-            <div class="climate-chip" style="background: rgba(33,145,127,0.15); border-color: rgba(33,145,127,0.3);">
-              <span class="climate-chip-icon">🌊</span>Ocean
-            </div>
-            <div class="climate-chip" style="background: rgba(155,35,53,0.15); border-color: rgba(155,35,53,0.3);">
-              <span class="climate-chip-icon">💀</span>Horror
-            </div>
+          <div class="pain-card reveal reveal-delay-2">
+            <div class="pain-icon">💻</div>
+            <div class="pain-title">Tab juggling</div>
+            <p class="pain-desc">
+              Alt-tabbing to a browser while your players watch you fumble for the right playlist.
+              Mood: killed. Immersion: shattered.
+            </p>
+          </div>
+          <div class="pain-card reveal reveal-delay-3">
+            <div class="pain-icon">🧠</div>
+            <div class="pain-title">Cognitive overhead</div>
+            <p class="pain-desc">
+              You're already managing NPCs, combat, and story. Remembering which playlist goes with
+              which scene is one thing too many.
+            </p>
           </div>
         </div>
+      </div>
+    </section>
 
-        <div class="feature-card reveal reveal-delay-1">
-          <div class="feature-icon" style="background: rgba(102,89,217,0.12);">🔊</div>
-          <div class="feature-title">Seamless crossfading</div>
-          <p class="feature-desc">Dual-channel audio engine with configurable crossfade (1–10 seconds). Old music fades out while new music fades in. No gaps, no silence.</p>
+    <!-- ========== HOW IT WORKS ========== -->
+    <section class="how-it-works" id="how-it-works">
+      <div class="container">
+        <div class="reveal">
+          <div class="section-label">How It Works</div>
+          <div class="section-title">Three steps to atmospheric sessions</div>
         </div>
-
-        <div class="feature-card reveal reveal-delay-1">
-          <div class="feature-icon" style="background: rgba(45,154,93,0.12);">📱</div>
-          <div class="feature-title">Phone remote</div>
-          <p class="feature-desc">Your phone becomes the remote via local WiFi. No app to install — just scan a QR code. Works on any phone with a browser.</p>
-        </div>
-
-        <div class="feature-card reveal reveal-delay-2">
-          <div class="feature-icon" style="background: rgba(212,148,58,0.12);">▶️</div>
-          <div class="feature-title">YouTube + local files</div>
-          <p class="feature-desc">Paste YouTube URLs or use your own MP3, WAV, OGG, or FLAC files. Mix both in the same climate playlist.</p>
-        </div>
-
-        <div class="feature-card reveal reveal-delay-2">
-          <div class="feature-icon" style="background: rgba(220,53,69,0.12);">🎚️</div>
-          <div class="feature-title">Volume normalization</div>
-          <p class="feature-desc">LUFS-based auto-leveling keeps every track at the same perceived volume. YouTube AGC handling included — no more jarring level jumps.</p>
-        </div>
-
-        <div class="feature-card reveal reveal-delay-2">
-          <div class="feature-icon" style="background: rgba(139,73,184,0.12);">🔇</div>
-          <div class="feature-title">Fade to silence</div>
-          <p class="feature-desc">One button gently fades everything to silence for dramatic moments. Tap again to resume. Volume control always at your fingertips.</p>
-        </div>
-
-        <div class="feature-card reveal reveal-delay-3">
-          <div class="feature-icon" style="background: rgba(75,107,212,0.12);">🗂️</div>
-          <div class="feature-title">Campaign organization</div>
-          <p class="feature-desc">Organize music by campaign. Switch between The Lost Mines, Curse of Strahd, and your homebrew without losing your setup.</p>
-        </div>
-
-        <div class="feature-card reveal reveal-delay-3">
-          <div class="feature-icon" style="background: rgba(33,145,127,0.12);">🌙</div>
-          <div class="feature-title">Dark by design</div>
-          <p class="feature-desc">Built for dimly lit game rooms. The dark interface never glares at you or draws your players' attention to your screen.</p>
-        </div>
-
-        <div class="feature-card reveal reveal-delay-3">
-          <div class="feature-icon" style="background: rgba(16,185,129,0.12);">📦</div>
-          <div class="feature-title">Export &amp; share</div>
-          <p class="feature-desc">Export campaigns as <code>.ambora</code> files and share them with other DMs. Import with one click — tracks, climates, and settings included.</p>
-        </div>
-
-        <div class="feature-card reveal reveal-delay-4">
-          <div class="feature-icon" style="background: rgba(245,158,11,0.12);">🎲</div>
-          <div class="feature-title">Starter campaign</div>
-          <p class="feature-desc">New to Ambora? Start with 15 pre-built RPG moods — combat, tavern, mystery, and more — ready to play out of the box.</p>
-        </div>
-
-        <div class="feature-card reveal reveal-delay-4">
-          <div class="feature-icon" style="background: rgba(139,92,246,0.12);">🔀</div>
-          <div class="feature-title">Shuffle mode</div>
-          <p class="feature-desc">Shuffle tracks within a climate so your playlist never feels predictable. Toggle per climate for variety across long sessions.</p>
+        <div class="steps">
+          <div class="step reveal reveal-delay-1">
+            <div class="step-number">01</div>
+            <div class="step-title">Build your soundscape</div>
+            <p class="step-desc">
+              Create a campaign — or start with the
+              <span class="step-highlight">15 pre-built RPG moods</span>. Add climates like combat,
+              tavern, forest, and mystery, each with its own playlist of YouTube or local tracks.
+            </p>
+          </div>
+          <div class="step reveal reveal-delay-2">
+            <div class="step-number">02</div>
+            <div class="step-title">Scan the QR code</div>
+            <p class="step-desc">
+              Ambora starts a local server on your network. Scan the QR with your phone — no app
+              install, no account. Your phone becomes a
+              <span class="step-highlight">remote control</span>.
+            </p>
+          </div>
+          <div class="step reveal reveal-delay-3">
+            <div class="step-number">03</div>
+            <div class="step-title">Tap to set the mood</div>
+            <p class="step-desc">
+              One tap switches climates with a smooth <span class="step-highlight">crossfade</span>.
+              Your players hear the tavern chatter melt into forest ambience. No gap. No break. Pure
+              immersion.
+            </p>
+          </div>
         </div>
       </div>
-    </div>
-  </section>
+    </section>
 
-  <!-- ========== OPEN SOURCE ========== -->
-  <section class="opensource" id="open-source">
-    <div class="container">
-      <div class="reveal">
-        <div class="section-label">Open Source</div>
-        <div class="section-title">Built in the open. Free forever.</div>
-        <p class="section-subtitle">Ambora is MIT-licensed. No subscriptions, no telemetry, no data collection. Your music stays on your machine.</p>
-      </div>
-      <div class="os-content">
-        <div class="os-points reveal">
-          <div class="os-point">
-            <div class="os-point-icon">🔓</div>
-            <div>
-              <div class="os-point-title">Fully local</div>
-              <p class="os-point-desc">No cloud servers. Music plays from your computer. Phone connects via your local WiFi. Nothing leaves your network.</p>
+    <!-- ========== FEATURES ========== -->
+    <section class="features" id="features">
+      <div class="container">
+        <div class="reveal">
+          <div class="section-label">Features</div>
+          <div class="section-title">Everything a DM needs. Nothing more.</div>
+          <p class="section-subtitle">
+            Ambora focuses on doing one thing exceptionally well — letting you switch musical
+            atmospheres without breaking your flow.
+          </p>
+        </div>
+        <div class="features-grid">
+          <div class="feature-card wide reveal">
+            <div class="feature-content">
+              <div class="feature-icon" style="background: rgba(123, 147, 245, 0.12)">🎨</div>
+              <div class="feature-title">Color-coded climates</div>
+              <p class="feature-desc">
+                Each climate gets its own color and icon — choose from 16 colors and 20 icons. On
+                the phone, they're large, glowing cards you can identify at a glance — even in a
+                dimly lit room.
+              </p>
+            </div>
+            <div class="climate-demo">
+              <div
+                class="climate-chip"
+                style="background: rgba(220, 53, 69, 0.15); border-color: rgba(220, 53, 69, 0.3)"
+              >
+                <span class="climate-chip-icon">⚔️</span>Combat
+              </div>
+              <div
+                class="climate-chip"
+                style="background: rgba(212, 148, 58, 0.15); border-color: rgba(212, 148, 58, 0.3)"
+              >
+                <span class="climate-chip-icon">🍺</span>Tavern
+              </div>
+              <div
+                class="climate-chip"
+                style="background: rgba(45, 154, 93, 0.15); border-color: rgba(45, 154, 93, 0.3)"
+              >
+                <span class="climate-chip-icon">🌲</span>Forest
+              </div>
+              <div
+                class="climate-chip"
+                style="background: rgba(102, 89, 217, 0.15); border-color: rgba(102, 89, 217, 0.3)"
+              >
+                <span class="climate-chip-icon">🔮</span>Arcane
+              </div>
+              <div
+                class="climate-chip"
+                style="background: rgba(33, 145, 127, 0.15); border-color: rgba(33, 145, 127, 0.3)"
+              >
+                <span class="climate-chip-icon">🌊</span>Ocean
+              </div>
+              <div
+                class="climate-chip"
+                style="background: rgba(155, 35, 53, 0.15); border-color: rgba(155, 35, 53, 0.3)"
+              >
+                <span class="climate-chip-icon">💀</span>Horror
+              </div>
             </div>
           </div>
-          <div class="os-point">
-            <div class="os-point-icon">🛠️</div>
-            <div>
-              <div class="os-point-title">Contribute</div>
-              <p class="os-point-desc">Built with Electron, React, TypeScript, and shadcn/ui. PRs welcome — check the CONTRIBUTING guide on GitHub.</p>
-            </div>
+
+          <div class="feature-card reveal reveal-delay-1">
+            <div class="feature-icon" style="background: rgba(102, 89, 217, 0.12)">🔊</div>
+            <div class="feature-title">Seamless crossfading</div>
+            <p class="feature-desc">
+              Dual-channel audio engine with configurable crossfade (1–10 seconds). Old music fades
+              out while new music fades in. No gaps, no silence.
+            </p>
           </div>
-          <div class="os-point">
-            <div class="os-point-icon">🧩</div>
-            <div>
-              <div class="os-point-title">Extensible</div>
-              <p class="os-point-desc">Clean architecture. Add new music sources, sound effects, or integrations. The codebase is documented and approachable.</p>
-            </div>
+
+          <div class="feature-card reveal reveal-delay-1">
+            <div class="feature-icon" style="background: rgba(45, 154, 93, 0.12)">📱</div>
+            <div class="feature-title">Phone remote</div>
+            <p class="feature-desc">
+              Your phone becomes the remote via local WiFi. No app to install — just scan a QR code.
+              Works on any phone with a browser.
+            </p>
           </div>
-          <div class="os-point">
-            <div class="os-point-icon">🔒</div>
-            <div>
-              <div class="os-point-title">Private by default</div>
-              <p class="os-point-desc">Zero telemetry, zero analytics, zero tracking. We don't know you use it. That's by design.</p>
-            </div>
+
+          <div class="feature-card reveal reveal-delay-2">
+            <div class="feature-icon" style="background: rgba(212, 148, 58, 0.12)">▶️</div>
+            <div class="feature-title">YouTube + local files</div>
+            <p class="feature-desc">
+              Paste YouTube URLs or use your own MP3, WAV, OGG, or FLAC files. Mix both in the same
+              climate playlist.
+            </p>
+          </div>
+
+          <div class="feature-card reveal reveal-delay-2">
+            <div class="feature-icon" style="background: rgba(220, 53, 69, 0.12)">🎚️</div>
+            <div class="feature-title">Volume normalization</div>
+            <p class="feature-desc">
+              LUFS-based auto-leveling keeps every track at the same perceived volume. YouTube AGC
+              handling included — no more jarring level jumps.
+            </p>
+          </div>
+
+          <div class="feature-card reveal reveal-delay-2">
+            <div class="feature-icon" style="background: rgba(139, 73, 184, 0.12)">🔇</div>
+            <div class="feature-title">Fade to silence</div>
+            <p class="feature-desc">
+              One button gently fades everything to silence for dramatic moments. Tap again to
+              resume. Volume control always at your fingertips.
+            </p>
+          </div>
+
+          <div class="feature-card reveal reveal-delay-3">
+            <div class="feature-icon" style="background: rgba(75, 107, 212, 0.12)">🗂️</div>
+            <div class="feature-title">Campaign organization</div>
+            <p class="feature-desc">
+              Organize music by campaign. Switch between The Lost Mines, Curse of Strahd, and your
+              homebrew without losing your setup.
+            </p>
+          </div>
+
+          <div class="feature-card reveal reveal-delay-3">
+            <div class="feature-icon" style="background: rgba(33, 145, 127, 0.12)">🌙</div>
+            <div class="feature-title">Dark by design</div>
+            <p class="feature-desc">
+              Built for dimly lit game rooms. The dark interface never glares at you or draws your
+              players' attention to your screen.
+            </p>
+          </div>
+
+          <div class="feature-card reveal reveal-delay-3">
+            <div class="feature-icon" style="background: rgba(16, 185, 129, 0.12)">📦</div>
+            <div class="feature-title">Export &amp; share</div>
+            <p class="feature-desc">
+              Export campaigns as <code>.ambora</code> files and share them with other DMs. Import
+              with one click — tracks, climates, and settings included.
+            </p>
+          </div>
+
+          <div class="feature-card reveal reveal-delay-4">
+            <div class="feature-icon" style="background: rgba(245, 158, 11, 0.12)">🎲</div>
+            <div class="feature-title">Starter campaign</div>
+            <p class="feature-desc">
+              New to Ambora? Start with 15 pre-built RPG moods — combat, tavern, mystery, and more —
+              ready to play out of the box.
+            </p>
+          </div>
+
+          <div class="feature-card reveal reveal-delay-4">
+            <div class="feature-icon" style="background: rgba(139, 92, 246, 0.12)">🔀</div>
+            <div class="feature-title">Shuffle mode</div>
+            <p class="feature-desc">
+              Shuffle tracks within a climate so your playlist never feels predictable. Toggle per
+              climate for variety across long sessions.
+            </p>
           </div>
         </div>
-        <div class="code-block reveal reveal-delay-1">
-          <pre><span class="comment"># Clone and run in 60 seconds</span>
+      </div>
+    </section>
+
+    <!-- ========== OPEN SOURCE ========== -->
+    <section class="opensource" id="open-source">
+      <div class="container">
+        <div class="reveal">
+          <div class="section-label">Open Source</div>
+          <div class="section-title">Built in the open. Free forever.</div>
+          <p class="section-subtitle">
+            Ambora is MIT-licensed. No subscriptions, no telemetry, no data collection. Your music
+            stays on your machine.
+          </p>
+        </div>
+        <div class="os-content">
+          <div class="os-points reveal">
+            <div class="os-point">
+              <div class="os-point-icon">🔓</div>
+              <div>
+                <div class="os-point-title">Fully local</div>
+                <p class="os-point-desc">
+                  No cloud servers. Music plays from your computer. Phone connects via your local
+                  WiFi. Nothing leaves your network.
+                </p>
+              </div>
+            </div>
+            <div class="os-point">
+              <div class="os-point-icon">🛠️</div>
+              <div>
+                <div class="os-point-title">Contribute</div>
+                <p class="os-point-desc">
+                  Built with Electron, React, TypeScript, and shadcn/ui. PRs welcome — check the
+                  CONTRIBUTING guide on GitHub.
+                </p>
+              </div>
+            </div>
+            <div class="os-point">
+              <div class="os-point-icon">🧩</div>
+              <div>
+                <div class="os-point-title">Extensible</div>
+                <p class="os-point-desc">
+                  Clean architecture. Add new music sources, sound effects, or integrations. The
+                  codebase is documented and approachable.
+                </p>
+              </div>
+            </div>
+            <div class="os-point">
+              <div class="os-point-icon">🔒</div>
+              <div>
+                <div class="os-point-title">Private by default</div>
+                <p class="os-point-desc">
+                  Zero telemetry, zero analytics, zero tracking. We don't know you use it. That's by
+                  design.
+                </p>
+              </div>
+            </div>
+          </div>
+          <div class="code-block reveal reveal-delay-1">
+            <pre><span class="comment"># Clone and run in 60 seconds</span>
 <span class="cmd">git clone</span> https://github.com/xetorthio/ambora
 <span class="cmd">cd</span> ambora
 <span class="cmd">npm</span> install
@@ -1372,86 +1780,185 @@
 <span class="comment"># → macOS (.dmg)</span>
 <span class="comment"># → Windows (.exe)</span>
 <span class="comment"># → Linux (.AppImage)</span></pre>
+          </div>
         </div>
       </div>
-    </div>
-  </section>
+    </section>
 
-  <!-- ========== CTA ========== -->
-  <section class="cta" id="download">
-    <div class="container">
-      <div class="reveal">
-        <div class="section-label">Get Started</div>
-        <div class="section-title">Your next session deserves<br>better music</div>
-        <p class="section-subtitle">Download Ambora for free, set up your climates in 5 minutes, and run your most immersive session yet.</p>
-        <div class="cta-actions">
-          <a href="https://github.com/xetorthio/ambora/releases/latest" class="btn btn-primary" target="_blank" rel="noopener noreferrer">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-            Download Latest Release
-          </a>
-          <a href="https://github.com/xetorthio/ambora" class="btn btn-secondary" target="_blank" rel="noopener noreferrer">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
-            View Source Code
-          </a>
-        </div>
-        <div class="platform-tags">
-          <span class="platform-tag">
-            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83"/><path d="M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>
-            macOS
-          </span>
-          <span class="platform-tag">
-            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M0 3.449L9.75 2.1v9.451H0m10.949-9.602L24 0v11.4H10.949M0 12.6h9.75v9.451L0 20.699M10.949 12.6H24V24l-12.9-1.801"/></svg>
-            Windows
-          </span>
-          <span class="platform-tag">
-            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12.504 0c-.155 0-.315.008-.48.021-4.226.333-3.105 4.807-3.17 6.298-.076 1.092-.3 1.953-1.05 3.02-.885 1.051-2.127 2.75-2.716 4.521-.278.832-.41 1.684-.287 2.489a.424.424 0 00-.11.135c-.26.268-.45.6-.663.839-.199.199-.485.267-.797.4-.313.136-.658.269-.864.68-.09.189-.136.394-.132.602 0 .199.027.4.055.536.058.399.116.728.04.97-.249.68-.28 1.145-.106 1.484.174.334.535.47.94.601.81.2 1.91.135 2.774.6.926.466 1.866.67 2.616.47.526-.116.97-.464 1.208-.946.587-.003 1.23-.269 2.26-.334.699-.058 1.574.267 2.577.2.025.134.063.198.114.333l.003.003c.391.778 1.113 1.368 1.884 1.43.199.015.39-.02.58-.123.236-.127.401-.361.514-.672.112-.31.187-.707.187-1.199v-.003c-.003-.327-.014-.649-.031-.946a.623.623 0 00.007-.142c.01-.086.012-.164.013-.245 0-.142-.012-.28-.025-.416-.094-.873-.41-1.535-.794-2.098-.198-.287-.39-.523-.556-.727a1.6 1.6 0 00-.073-.087c-.133-.178-.245-.336-.364-.617-.119-.287-.178-.652-.196-1.14-.013-.337.007-.706.09-1.14.076-.404.222-.855.42-1.432.339-.978.578-2.015.578-3.093 0-1.262-.229-2.498-.925-3.534A5.5 5.5 0 0016 .585a6.142 6.142 0 00-3.496-.585z"/></svg>
-            Linux
-          </span>
+    <!-- ========== CTA ========== -->
+    <section class="cta" id="download">
+      <div class="container">
+        <div class="reveal">
+          <div class="section-label">Get Started</div>
+          <div class="section-title">Your next session deserves<br />better music</div>
+          <p class="section-subtitle">
+            Download Ambora for free, set up your climates in 5 minutes, and run your most immersive
+            session yet.
+          </p>
+          <div class="cta-actions">
+            <a
+              href="https://github.com/xetorthio/ambora/releases/latest"
+              class="btn btn-primary"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                <polyline points="7 10 12 15 17 10" />
+                <line x1="12" y1="15" x2="12" y2="3" />
+              </svg>
+              Download Latest Release
+            </a>
+            <a
+              href="https://github.com/xetorthio/ambora"
+              class="btn btn-secondary"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <polyline points="16 18 22 12 16 6" />
+                <polyline points="8 6 2 12 8 18" />
+              </svg>
+              View Source Code
+            </a>
+          </div>
+          <div class="platform-tags">
+            <span class="platform-tag">
+              <svg viewBox="0 0 24 24" fill="currentColor">
+                <path
+                  d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83"
+                />
+                <path
+                  d="M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"
+                />
+              </svg>
+              macOS
+            </span>
+            <span class="platform-tag">
+              <svg viewBox="0 0 24 24" fill="currentColor">
+                <path
+                  d="M0 3.449L9.75 2.1v9.451H0m10.949-9.602L24 0v11.4H10.949M0 12.6h9.75v9.451L0 20.699M10.949 12.6H24V24l-12.9-1.801"
+                />
+              </svg>
+              Windows
+            </span>
+            <span class="platform-tag">
+              <svg viewBox="0 0 24 24" fill="currentColor">
+                <path
+                  d="M12.504 0c-.155 0-.315.008-.48.021-4.226.333-3.105 4.807-3.17 6.298-.076 1.092-.3 1.953-1.05 3.02-.885 1.051-2.127 2.75-2.716 4.521-.278.832-.41 1.684-.287 2.489a.424.424 0 00-.11.135c-.26.268-.45.6-.663.839-.199.199-.485.267-.797.4-.313.136-.658.269-.864.68-.09.189-.136.394-.132.602 0 .199.027.4.055.536.058.399.116.728.04.97-.249.68-.28 1.145-.106 1.484.174.334.535.47.94.601.81.2 1.91.135 2.774.6.926.466 1.866.67 2.616.47.526-.116.97-.464 1.208-.946.587-.003 1.23-.269 2.26-.334.699-.058 1.574.267 2.577.2.025.134.063.198.114.333l.003.003c.391.778 1.113 1.368 1.884 1.43.199.015.39-.02.58-.123.236-.127.401-.361.514-.672.112-.31.187-.707.187-1.199v-.003c-.003-.327-.014-.649-.031-.946a.623.623 0 00.007-.142c.01-.086.012-.164.013-.245 0-.142-.012-.28-.025-.416-.094-.873-.41-1.535-.794-2.098-.198-.287-.39-.523-.556-.727a1.6 1.6 0 00-.073-.087c-.133-.178-.245-.336-.364-.617-.119-.287-.178-.652-.196-1.14-.013-.337.007-.706.09-1.14.076-.404.222-.855.42-1.432.339-.978.578-2.015.578-3.093 0-1.262-.229-2.498-.925-3.534A5.5 5.5 0 0016 .585a6.142 6.142 0 00-3.496-.585z"
+                />
+              </svg>
+              Linux
+            </span>
+          </div>
         </div>
       </div>
-    </div>
-  </section>
+    </section>
 
-  <!-- ========== FOOTER ========== -->
-  <footer>
-    <div class="container footer-inner">
-      <div class="footer-left">
-        <svg viewBox="-80 -80 160 160" fill="none" xmlns="http://www.w3.org/2000/svg" width="22" height="22">
-          <path d="M -10,28 A 34,34 0 0,1 -10,-28" stroke="#7B93F5" stroke-width="5" stroke-linecap="round" opacity="0.7"/>
-          <path d="M 10,28 A 34,34 0 0,0 10,-28" stroke="#95A8F8" stroke-width="5" stroke-linecap="round" opacity="0.7"/>
-          <circle cx="0" cy="0" r="3" fill="#EAEAED" opacity="0.7"/>
-        </svg>
-        <span>AMBORA</span>
+    <!-- ========== FOOTER ========== -->
+    <footer>
+      <div class="container footer-inner">
+        <div class="footer-left">
+          <svg
+            viewBox="-80 -80 160 160"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+            width="22"
+            height="22"
+          >
+            <path
+              d="M -10,28 A 34,34 0 0,1 -10,-28"
+              stroke="#7B93F5"
+              stroke-width="5"
+              stroke-linecap="round"
+              opacity="0.7"
+            />
+            <path
+              d="M 10,28 A 34,34 0 0,0 10,-28"
+              stroke="#95A8F8"
+              stroke-width="5"
+              stroke-linecap="round"
+              opacity="0.7"
+            />
+            <circle cx="0" cy="0" r="3" fill="#EAEAED" opacity="0.7" />
+          </svg>
+          <span>AMBORA</span>
+        </div>
+        <ul class="footer-links">
+          <li>
+            <a href="https://github.com/xetorthio/ambora" target="_blank" rel="noopener noreferrer"
+              >GitHub</a
+            >
+          </li>
+          <li>
+            <a
+              href="https://github.com/xetorthio/ambora/releases"
+              target="_blank"
+              rel="noopener noreferrer"
+              >Releases</a
+            >
+          </li>
+          <li>
+            <a
+              href="https://github.com/xetorthio/ambora/blob/main/CONTRIBUTING.md"
+              target="_blank"
+              rel="noopener noreferrer"
+              >Contribute</a
+            >
+          </li>
+          <li>
+            <a
+              href="https://github.com/xetorthio/ambora/blob/main/LICENSE"
+              target="_blank"
+              rel="noopener noreferrer"
+              >MIT License</a
+            >
+          </li>
+        </ul>
       </div>
-      <ul class="footer-links">
-        <li><a href="https://github.com/xetorthio/ambora" target="_blank" rel="noopener noreferrer">GitHub</a></li>
-        <li><a href="https://github.com/xetorthio/ambora/releases" target="_blank" rel="noopener noreferrer">Releases</a></li>
-        <li><a href="https://github.com/xetorthio/ambora/blob/main/CONTRIBUTING.md" target="_blank" rel="noopener noreferrer">Contribute</a></li>
-        <li><a href="https://github.com/xetorthio/ambora/blob/main/LICENSE" target="_blank" rel="noopener noreferrer">MIT License</a></li>
-      </ul>
-    </div>
-  </footer>
+    </footer>
 
-  <!-- ========== SCRIPTS ========== -->
-  <script>
-    // Navbar scroll effect
-    const nav = document.getElementById('nav');
-    window.addEventListener('scroll', () => {
-      nav.classList.toggle('scrolled', window.scrollY > 40);
-    }, { passive: true });
+    <!-- ========== SCRIPTS ========== -->
+    <script>
+      // Navbar scroll effect
+      const nav = document.getElementById('nav')
+      window.addEventListener(
+        'scroll',
+        () => {
+          nav.classList.toggle('scrolled', window.scrollY > 40)
+        },
+        { passive: true },
+      )
 
-    // Scroll reveal
-    const reveals = document.querySelectorAll('.reveal');
-    const observer = new IntersectionObserver((entries) => {
-      entries.forEach(entry => {
-        if (entry.isIntersecting) {
-          entry.target.classList.add('visible');
-          observer.unobserve(entry.target);
-        }
-      });
-    }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
+      // Scroll reveal
+      const reveals = document.querySelectorAll('.reveal')
+      const observer = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((entry) => {
+            if (entry.isIntersecting) {
+              entry.target.classList.add('visible')
+              observer.unobserve(entry.target)
+            }
+          })
+        },
+        { threshold: 0.1, rootMargin: '0px 0px -40px 0px' },
+      )
 
-    reveals.forEach(el => observer.observe(el));
-  </script>
-</body>
+      reveals.forEach((el) => observer.observe(el))
+    </script>
+  </body>
 </html>

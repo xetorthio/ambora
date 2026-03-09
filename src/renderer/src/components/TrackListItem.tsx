@@ -11,7 +11,12 @@ interface TrackListItemProps {
   onPlay?: (trackId: string) => void
 }
 
-export function TrackListItem({ track, onDelete, climateColor, onPlay }: TrackListItemProps): React.JSX.Element {
+export function TrackListItem({
+  track,
+  onDelete,
+  climateColor,
+  onPlay,
+}: TrackListItemProps): React.JSX.Element {
   const [isRemoving, setIsRemoving] = useState(false)
 
   function handleDelete(): void {
