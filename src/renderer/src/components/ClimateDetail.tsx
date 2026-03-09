@@ -27,6 +27,8 @@ import { useCampaignStore } from '@/store/campaignStore'
 import type { Climate, Track } from '@/lib/types'
 import { toast } from 'sonner'
 import { getLocalFileDuration } from '@/lib/utils'
+import { useAudioEngine } from '@/hooks/useAudioEngine'
+import { useAudioStore } from '@/store/audioStore'
 
 interface ClimateDetailProps {
   climate: Climate
@@ -92,6 +94,18 @@ export function ClimateDetail({
     }
     if (audioFiles.length > 0) {
       toast.success(`${audioFiles.length} track${audioFiles.length > 1 ? 's' : ''} added`)
+    }
+  }
+
+  const audioEngine = useAudioEngine()
+
+  async function handlePlayTrack(trackId: string): Promise<void> {
+    const currentState = useAudioStore.getState()
+
+    if (currentState.activeClimateId !== climate.id) {
+      await audioEngine.activateClimate(climate, trackId)
+    } else {
+      await audioEngine.skipToTrack(trackId)
     }
   }
 
@@ -248,7 +262,7 @@ export function ClimateDetail({
                 </div>
               </div>
             )}
-            <TrackList tracks={climate.tracks} onDeleteTrack={handleDeleteTrack} />
+            <TrackList tracks={climate.tracks} onDeleteTrack={handleDeleteTrack} climateColor={climate.color} onPlayTrack={handlePlayTrack} />
           </div>
         </div>
       </div>

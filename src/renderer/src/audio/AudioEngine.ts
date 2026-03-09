@@ -523,7 +523,7 @@ export class AudioEngine {
     })
   }
 
-  async activateClimate(climate: Climate): Promise<void> {
+  async activateClimate(climate: Climate, startTrackId?: string): Promise<void> {
     // Already playing this climate — no-op
     if (useAudioStore.getState().activeClimateId === climate.id && this.engineState === 'playing') {
       return
@@ -548,11 +548,19 @@ export class AudioEngine {
 
     // Restore from snapshot if available, otherwise start at track 0
     const snapshot = this.getClimateSnapshot(climate)
-    const startTrackIndex = snapshot
-      ? snapshot.trackIndex % sorted.length
-      : useAudioStore.getState().isShuffled && sorted.length > 1
-        ? Math.floor(Math.random() * sorted.length)
-        : 0
+
+    let startTrackIndex: number
+    if (startTrackId) {
+      const idx = sorted.findIndex((t) => t.id === startTrackId)
+      startTrackIndex = idx === -1 ? 0 : idx
+    } else if (snapshot) {
+      startTrackIndex = snapshot.trackIndex % sorted.length
+    } else if (useAudioStore.getState().isShuffled && sorted.length > 1) {
+      startTrackIndex = Math.floor(Math.random() * sorted.length)
+    } else {
+      startTrackIndex = 0
+    }
+
     const startPositionSec = snapshot?.positionSec ?? 0
 
     this.currentClimate = climate
@@ -691,6 +699,22 @@ export class AudioEngine {
     if (this.engineState !== 'playing') return
     ++this.activationSeq
     await this.advanceToTrack(this.getNextTrackIndex())
+  }
+
+  async skipToTrack(trackId: string): Promise<void> {
+    if (!this.currentClimate) return
+
+    const sorted = [...this.currentClimate.tracks].sort((a, b) => a.order - b.order)
+    const trackIndex = sorted.findIndex(t => t.id === trackId)
+
+    if (trackIndex === -1) return
+
+    if (this.engineState === 'crossfading') {
+      this.completePendingCrossfade()
+    }
+
+    ++this.activationSeq
+    await this.advanceToTrack(trackIndex)
   }
 
   fadeToSilence(): void {
