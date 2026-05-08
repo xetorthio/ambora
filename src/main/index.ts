@@ -1,14 +1,4 @@
-import {
-  app,
-  shell,
-  BrowserWindow,
-  ipcMain,
-  protocol,
-  net,
-  dialog,
-  desktopCapturer,
-  session,
-} from 'electron'
+import { app, shell, BrowserWindow, ipcMain, protocol, net, dialog, session } from 'electron'
 import { readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'path'
 import { pathToFileURL } from 'node:url'
@@ -25,6 +15,7 @@ import {
   getLocalIP,
   setMainWindow,
 } from './server'
+import { DisplaySourceManager } from './displaySourceManager'
 
 let mainWindow: BrowserWindow | null = null
 const audioPathRegistry = new Map<string, string>()
@@ -175,15 +166,20 @@ app.whenReady().then(async () => {
     return net.fetch(pathToFileURL(filePath).href)
   })
 
-  // Allow renderer to capture system audio via getDisplayMedia for YouTube AGC
+  // Allow renderer to capture system audio via getDisplayMedia with session level cache for YouTube AGC
   session.defaultSession.setDisplayMediaRequestHandler(async (_request, callback) => {
     try {
-      const sources = await desktopCapturer.getSources({ types: ['screen'] })
-      if (sources.length === 0) {
+      // Call to cached sources
+      const sources = await DisplaySourceManager.getInstance().getStream()
+      if (!(sources.video && sources.audio)) {
         callback({})
         return
+      } else {
+        callback({
+          video: sources.video,
+          audio: sources.audio,
+        })
       }
-      callback({ video: sources[0], audio: 'loopback' })
     } catch {
       callback({})
     }
