@@ -24,6 +24,8 @@ import { ICON_MAP, type ClimateIconName } from '@/lib/iconMap'
 import { DEFAULTS } from '@/lib/constants'
 import { useInlineEdit } from '@/hooks/useInlineEdit'
 import { useCampaignStore } from '@/store/campaignStore'
+import { useAudioStore } from '@/store/audioStore'
+import { useAudioEngine } from '@/hooks/useAudioEngine'
 import type { Climate, Track } from '@/lib/types'
 import { toast } from 'sonner'
 import { getLocalFileDuration } from '@/lib/utils'
@@ -40,6 +42,7 @@ export function ClimateDetail({
   onClose,
 }: ClimateDetailProps): React.JSX.Element {
   const { updateClimate, deleteClimate, addTrack, removeTrack } = useCampaignStore()
+  const audioEngine = useAudioEngine()
   const [addTrackOpen, setAddTrackOpen] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [isDragOver, setIsDragOver] = useState(false)
@@ -73,6 +76,18 @@ export function ClimateDetail({
   function handleDeleteTrack(trackId: string): void {
     removeTrack(campaignId, climate.id, trackId)
     toast.success('Track removed')
+  }
+
+  async function handlePlayTrack(trackId: string): Promise<void> {
+    const { activeClimateId, isPlaying, isFadingToSilence } = useAudioStore.getState()
+    // Crossfade within the climate only when it's the one actively playing.
+    // Otherwise (idle, a different climate, or mid fade-to-silence) (re)activate
+    // this climate starting from the chosen track.
+    if (activeClimateId === climate.id && isPlaying && !isFadingToSilence) {
+      await audioEngine.skipToTrack(trackId)
+    } else {
+      await audioEngine.activateClimate(climate, trackId)
+    }
   }
 
   async function handleDropFiles(files: File[]): Promise<void> {
@@ -248,7 +263,12 @@ export function ClimateDetail({
                 </div>
               </div>
             )}
-            <TrackList tracks={climate.tracks} onDeleteTrack={handleDeleteTrack} />
+            <TrackList
+              tracks={climate.tracks}
+              onDeleteTrack={handleDeleteTrack}
+              climateColor={climate.color}
+              onPlayTrack={handlePlayTrack}
+            />
           </div>
         </div>
       </div>

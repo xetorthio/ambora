@@ -610,9 +610,14 @@ export class AudioEngine {
     })
   }
 
-  async activateClimate(climate: Climate): Promise<void> {
-    // Already playing this climate — no-op
-    if (useAudioStore.getState().activeClimateId === climate.id && this.engineState === 'playing') {
+  async activateClimate(climate: Climate, startTrackId?: string): Promise<void> {
+    // Already playing this climate — no-op. An explicit track request (startTrackId)
+    // always takes effect, even when this climate is already the active one.
+    if (
+      !startTrackId &&
+      useAudioStore.getState().activeClimateId === climate.id &&
+      this.engineState === 'playing'
+    ) {
       return
     }
 
@@ -633,14 +638,26 @@ export class AudioEngine {
 
     const sorted = [...climate.tracks].sort((a, b) => a.order - b.order)
 
-    // Restore from snapshot if available, otherwise start at track 0
+    // A specific track was requested: start it from the beginning. Otherwise
+    // restore from snapshot if available, else start at track 0 (or a random
+    // track when shuffling).
     const snapshot = this.getClimateSnapshot(climate)
-    const startTrackIndex = snapshot
-      ? snapshot.trackIndex % sorted.length
-      : useAudioStore.getState().isShuffled && sorted.length > 1
-        ? Math.floor(Math.random() * sorted.length)
-        : 0
-    const startPositionSec = snapshot?.positionSec ?? 0
+    let startTrackIndex: number
+    let startPositionSec: number
+    if (startTrackId) {
+      const idx = sorted.findIndex((t) => t.id === startTrackId)
+      startTrackIndex = idx === -1 ? 0 : idx
+      startPositionSec = 0
+    } else if (snapshot) {
+      startTrackIndex = snapshot.trackIndex % sorted.length
+      startPositionSec = snapshot.positionSec ?? 0
+    } else {
+      startTrackIndex =
+        useAudioStore.getState().isShuffled && sorted.length > 1
+          ? Math.floor(Math.random() * sorted.length)
+          : 0
+      startPositionSec = 0
+    }
 
     this.currentClimate = climate
     this.currentTrackIndex = startTrackIndex
@@ -778,6 +795,25 @@ export class AudioEngine {
     if (this.engineState !== 'playing') return
     ++this.activationSeq
     await this.advanceToTrack(this.getNextTrackIndex())
+  }
+
+  // Crossfade to a specific track within the currently playing climate. Only
+  // valid while playing — callers should route to activateClimate() when the
+  // climate isn't the active one or is idle/fading-to-silence.
+  async skipToTrack(trackId: string): Promise<void> {
+    if (!this.currentClimate) return
+
+    const sorted = [...this.currentClimate.tracks].sort((a, b) => a.order - b.order)
+    const trackIndex = sorted.findIndex((t) => t.id === trackId)
+    if (trackIndex === -1) return
+
+    if (this.engineState === 'crossfading') {
+      this.completePendingCrossfade()
+    }
+
+    if (this.engineState !== 'playing') return
+    ++this.activationSeq
+    await this.advanceToTrack(trackIndex)
   }
 
   fadeToSilence(): void {
