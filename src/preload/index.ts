@@ -4,6 +4,7 @@ import type { Campaign, RemoteCommand, RemoteStateMessage, RemoteFullState } fro
 
 // Custom APIs for renderer
 const api = {
+  platform: process.platform,
   getCampaigns: (): Promise<Campaign[]> => ipcRenderer.invoke('data:get-campaigns'),
   saveCampaigns: (campaigns: Campaign[]): void => {
     ipcRenderer.send('data:save-campaigns', campaigns)

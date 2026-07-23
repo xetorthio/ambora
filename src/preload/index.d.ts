@@ -2,6 +2,7 @@ import { ElectronAPI } from '@electron-toolkit/preload'
 import type { Campaign, RemoteCommand, RemoteStateMessage, RemoteFullState } from '../shared/types'
 
 interface AmboraAPI {
+  platform: NodeJS.Platform
   getCampaigns(): Promise<Campaign[]>
   saveCampaigns(campaigns: Campaign[]): void
   getPathForFile(file: File): string

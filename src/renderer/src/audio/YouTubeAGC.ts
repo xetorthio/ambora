@@ -9,6 +9,13 @@
  *
  * The AGC only attenuates (max gain = 1.0) since YouTube already normalizes to
  * roughly -14 LUFS. We just tame dynamic peaks.
+ *
+ * NOTE: This feature is disabled on Linux. There, getDisplayMedia() is serviced
+ * by the xdg-desktop-portal ScreenCast interface, which pops a screen-capture
+ * permission dialog — and on Wayland re-prompts on every stream (re)acquisition,
+ * i.e. on every track switch (see issue #3). Audio plays fine without the AGC,
+ * so we skip it entirely rather than drag the screen-capture APIs into the
+ * audio path on that platform.
  */
 
 const TARGET_RMS = 0.08 // Approximate RMS corresponding to -14 LUFS
@@ -17,6 +24,10 @@ const MAX_GAIN = 1.0 // No amplification
 const ATTACK_COEFF = 0.05 // Fast attack for peaks (~10ms effective)
 const RELEASE_COEFF = 0.002 // Slow release (~500ms effective)
 const SILENCE_THRESHOLD = 0.001 // Below this RMS, don't adjust
+
+// The loopback capture behind the AGC triggers repeated screen-capture portal
+// prompts on Linux (issue #3), so the feature is unavailable there.
+const AGC_SUPPORTED = window.api.platform !== 'linux'
 
 export class YouTubeAGC {
   private stream: MediaStream | null = null
@@ -34,6 +45,7 @@ export class YouTubeAGC {
     getVolume01: () => number,
   ): Promise<void> {
     if (this.active) return
+    if (!AGC_SUPPORTED) return
 
     this.onGainChange = onGainChange
     this.getVolume01 = getVolume01

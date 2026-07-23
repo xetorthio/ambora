@@ -267,8 +267,16 @@ app.whenReady().then(async () => {
     })
   })
 
-  // Allow renderer to capture system audio via getDisplayMedia for YouTube AGC
+  // Allow renderer to capture system audio via getDisplayMedia for YouTube AGC.
+  // On Linux this goes through the xdg-desktop-portal ScreenCast interface, which
+  // re-prompts for screen-capture permission on every stream acquisition (issue
+  // #3). The AGC is disabled on Linux in the renderer; deny here too so no stray
+  // request can ever surface a portal prompt.
   session.defaultSession.setDisplayMediaRequestHandler(async (_request, callback) => {
+    if (process.platform === 'linux') {
+      callback({})
+      return
+    }
     try {
       const sources = await desktopCapturer.getSources({ types: ['screen'] })
       if (sources.length === 0) {
