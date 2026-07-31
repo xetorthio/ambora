@@ -46,7 +46,10 @@ jobs:
 
       - name: Set version from tag
         shell: bash
-        run: npm version "${GITHUB_REF_NAME#v}" --no-git-tag-version
+        # --allow-same-version so the build doesn't fail when package.json is
+        # already at the tag's version (e.g. it was bumped in a merged PR before
+        # tagging). Without it, `npm version` errors with "Version not changed".
+        run: npm version "${GITHUB_REF_NAME#v}" --no-git-tag-version --allow-same-version
 
       - run: npm run ${{ matrix.script }} -- --publish never
 
