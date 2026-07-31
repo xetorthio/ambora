@@ -11,6 +11,8 @@ import { LufsCache } from './LufsCache'
 import { analyzeLufs, computeGainCorrection } from './LufsAnalyzer'
 import { NormalizationChain } from './NormalizationChain'
 import { YouTubeAGC } from './YouTubeAGC'
+import { ShuffleBag, nextSequentialIndex } from './trackSelection'
+import { audioLog, extOf } from './audioLog'
 import { useAudioStore } from '@/store/audioStore'
 import type { Climate, Track } from '@/lib/types'
 
@@ -98,6 +100,10 @@ export class AudioEngine {
   private youtubeAGC = new YouTubeAGC()
   private positionInterval: ReturnType<typeof setInterval> | null = null
   private autoAdvancing = false
+  // Tracks that failed to load/play this climate session, so selection skips them
+  // instead of repeatedly landing on them. Cleared on (re)activation and goIdle.
+  private failedTrackIds = new Set<string>()
+  private shuffleBag = new ShuffleBag()
 
   private constructor() {
     this.crossfadeManager = new CrossfadeManager()
@@ -266,19 +272,25 @@ export class AudioEngine {
     channel.gainNode.gain.setValueAtTime(0, now)
   }
 
+  private sortedTracks(climate: Climate): Track[] {
+    return [...climate.tracks].sort((a, b) => a.order - b.order)
+  }
+
   private getNextTrackIndex(): number {
     if (!this.currentClimate || this.currentClimate.tracks.length === 0) return 0
-    const trackCount = this.currentClimate.tracks.length
+    const sorted = this.sortedTracks(this.currentClimate)
+    const ids = sorted.map((t) => t.id)
 
-    if (useAudioStore.getState().isShuffled && trackCount > 1) {
-      let randomIndex: number
-      do {
-        randomIndex = Math.floor(Math.random() * trackCount)
-      } while (randomIndex === this.currentTrackIndex)
-      return randomIndex
+    if (!useAudioStore.getState().isShuffled || sorted.length <= 1) {
+      return nextSequentialIndex(this.currentTrackIndex, ids, this.failedTrackIds)
     }
 
-    return (this.currentTrackIndex + 1) % trackCount
+    return this.shuffleBag.next(
+      ids,
+      this.failedTrackIds,
+      this.currentTrackIndex,
+      this.getTrackFingerprint(this.currentClimate),
+    )
   }
 
   private getTrackFingerprint(climate: Climate): string {
@@ -336,9 +348,22 @@ export class AudioEngine {
       const message = error instanceof Error ? error.message : 'Failed to load track'
       // Suppress the toast when a newer activation superseded this load (e.g. the
       // user skipped tracks rapidly) — the aborted load is expected, not a failure.
-      if (loadSeq === undefined || this.activationSeq === loadSeq) {
+      const superseded = loadSeq !== undefined && this.activationSeq !== loadSeq
+      if (!superseded) {
         toast.error(`Skipping "${track.title}": ${message}`)
+        // Remember genuine failures so selection skips this track for the rest of
+        // the session instead of repeatedly landing on it.
+        this.failedTrackIds.add(track.id)
       }
+      audioLog('playback', 'load-failed', {
+        trackId: track.id,
+        title: track.title,
+        trackSource: track.source,
+        localFilePath: track.localFilePath,
+        ext: extOf(track.localFilePath),
+        outcome: superseded ? 'superseded' : 'skipped',
+        detail: message,
+      })
       player.dispose()
       channel.player = null
       channel.state = 'inactive'
@@ -362,6 +387,17 @@ export class AudioEngine {
     player.onEnded(() => this.handleTrackEnded())
     player.onError((err) => {
       toast.error(`Playback error: ${err.message}`)
+      // A track that errors mid-playback is treated as ended; remember it so we
+      // don't crossfade straight back into the same broken track.
+      this.failedTrackIds.add(track.id)
+      audioLog('playback', 'runtime-error', {
+        trackId: track.id,
+        title: track.title,
+        trackSource: track.source,
+        localFilePath: track.localFilePath,
+        ext: extOf(track.localFilePath),
+        detail: err.message,
+      })
       this.handleTrackEnded()
     })
 
@@ -403,8 +439,15 @@ export class AudioEngine {
             chain.setNormalizationGain(result.gainCorrection, 0.5)
           }
         })
-        .catch(() => {
-          // Analysis failed — leave gain at 1.0 (no normalization)
+        .catch((err) => {
+          // Analysis failed — leave gain at 1.0 (no normalization). Logged (not
+          // surfaced) so a LUFS-path decode error is distinguishable from a real
+          // playback failure when triaging console noise.
+          audioLog('lufs', 'analysis-failed', {
+            localFilePath: filePath,
+            ext: extOf(filePath),
+            detail: err instanceof Error ? err.message : String(err),
+          })
         })
     })
   }
@@ -462,8 +505,17 @@ export class AudioEngine {
     const remaining = duration - player.getCurrentTime()
     if (remaining > crossfade + NEAR_END_PRELOAD_MARGIN) return
 
+    this.triggerAdvance(this.getNextTrackIndex(), crossfade)
+  }
+
+  // Single guarded entry point for auto-advances. Holds `autoAdvancing` for the
+  // whole load phase so a track that ends (or a poll tick) while an advance is
+  // still loading cannot spawn a second, concurrent advanceToTrack — the race
+  // behind abrupt mid-track cuts.
+  private triggerAdvance(nextIndex: number, crossfadeDuration?: number): void {
+    if (this.autoAdvancing) return
     this.autoAdvancing = true
-    void this.advanceToTrack(this.getNextTrackIndex(), crossfade)
+    void this.advanceToTrack(nextIndex, crossfadeDuration)
       .catch(() => {})
       .finally(() => {
         this.autoAdvancing = false
@@ -471,16 +523,16 @@ export class AudioEngine {
   }
 
   private handleTrackEnded(): void {
-    if (this.engineState !== 'playing' || this.isActivationLoading) {
+    if (this.engineState !== 'playing' || this.isActivationLoading || this.autoAdvancing) {
       return
     }
 
     if (!this.currentClimate || this.currentClimate.tracks.length <= 1) {
-      this.advanceToTrack(this.currentTrackIndex)
+      this.triggerAdvance(this.currentTrackIndex)
       return
     }
 
-    this.advanceToTrack(this.getNextTrackIndex())
+    this.triggerAdvance(this.getNextTrackIndex())
   }
 
   private completePendingCrossfade(): void {
@@ -516,13 +568,32 @@ export class AudioEngine {
       return
     }
 
-    const maxAttempts = sorted.length
-    let attempts = 0
-    let idx = nextIndex
+    const ids = sorted.map((t) => t.id)
 
-    while (attempts < maxAttempts) {
-      this.currentTrackIndex = idx % sorted.length
-      const track = sorted[this.currentTrackIndex]
+    // Everything is already known-bad this session — don't churn through
+    // guaranteed failures (which would re-toast each one); just stop.
+    if (this.failedTrackIds.size >= sorted.length) {
+      audioLog('select', 'all-tracks-failed', {
+        failedCount: this.failedTrackIds.size,
+        trackCount: sorted.length,
+      })
+      toast.error('All tracks failed to load')
+      this.goIdle()
+      return
+    }
+
+    let idx = nextIndex % sorted.length
+
+    for (let attempts = 0; attempts < sorted.length; attempts++) {
+      this.currentTrackIndex = idx
+      const track = sorted[idx]
+
+      // Skip tracks already known to fail (unless every track has failed) so a
+      // few broken files don't repeatedly interrupt or collapse selection.
+      if (this.failedTrackIds.has(track.id) && this.failedTrackIds.size < sorted.length) {
+        idx = nextSequentialIndex(idx, ids, this.failedTrackIds)
+        continue
+      }
 
       this.updateStore({ activeTrackId: track.id })
 
@@ -579,11 +650,22 @@ export class AudioEngine {
         return
       }
 
-      attempts++
-      idx = (this.currentTrackIndex + 1) % sorted.length
+      idx = nextSequentialIndex(idx, ids, this.failedTrackIds)
     }
 
-    toast.error('All tracks failed to load')
+    // Nothing in this pass could load. Keep the message honest about how many
+    // tracks are unplayable so a mostly-working climate reads differently from a
+    // fully-broken one.
+    const failedCount = this.failedTrackIds.size
+    audioLog('select', 'advance-exhausted', {
+      failedCount,
+      trackCount: sorted.length,
+    })
+    toast.error(
+      failedCount >= sorted.length
+        ? 'All tracks failed to load'
+        : `${failedCount} of ${sorted.length} tracks couldn't be played`,
+    )
     this.goIdle()
   }
 
@@ -601,6 +683,8 @@ export class AudioEngine {
 
     this.currentClimate = null
     this.currentTrackIndex = 0
+    this.failedTrackIds.clear()
+    this.shuffleBag.reset()
     useAudioStore.getState().clearAllFadeAnimations()
     this.updateStore({
       isPlaying: false,
@@ -631,6 +715,11 @@ export class AudioEngine {
 
     this.ensureContext()
 
+    // New activation session for this climate — forget prior per-session failures
+    // and start a fresh shuffle cycle so retries and full coverage both reset.
+    this.failedTrackIds.clear()
+    this.shuffleBag.reset()
+
     if (this.engineState === 'crossfading') {
       this.completePendingCrossfade()
     }
@@ -651,11 +740,16 @@ export class AudioEngine {
     } else if (snapshot) {
       startTrackIndex = snapshot.trackIndex % sorted.length
       startPositionSec = snapshot.positionSec ?? 0
+    } else if (useAudioStore.getState().isShuffled && sorted.length > 1) {
+      startTrackIndex = this.shuffleBag.next(
+        sorted.map((t) => t.id),
+        this.failedTrackIds,
+        -1,
+        this.getTrackFingerprint(climate),
+      )
+      startPositionSec = 0
     } else {
-      startTrackIndex =
-        useAudioStore.getState().isShuffled && sorted.length > 1
-          ? Math.floor(Math.random() * sorted.length)
-          : 0
+      startTrackIndex = 0
       startPositionSec = 0
     }
 
@@ -794,7 +888,14 @@ export class AudioEngine {
 
     if (this.engineState !== 'playing') return
     ++this.activationSeq
-    await this.advanceToTrack(this.getNextTrackIndex())
+    // Hold the guard for the load so a near-end poll tick can't start a second,
+    // competing advance while this user-initiated skip is still loading.
+    this.autoAdvancing = true
+    try {
+      await this.advanceToTrack(this.getNextTrackIndex())
+    } finally {
+      this.autoAdvancing = false
+    }
   }
 
   // Crossfade to a specific track within the currently playing climate. Only
@@ -803,7 +904,7 @@ export class AudioEngine {
   async skipToTrack(trackId: string): Promise<void> {
     if (!this.currentClimate) return
 
-    const sorted = [...this.currentClimate.tracks].sort((a, b) => a.order - b.order)
+    const sorted = this.sortedTracks(this.currentClimate)
     const trackIndex = sorted.findIndex((t) => t.id === trackId)
     if (trackIndex === -1) return
 
@@ -813,7 +914,12 @@ export class AudioEngine {
 
     if (this.engineState !== 'playing') return
     ++this.activationSeq
-    await this.advanceToTrack(trackIndex)
+    this.autoAdvancing = true
+    try {
+      await this.advanceToTrack(trackIndex)
+    } finally {
+      this.autoAdvancing = false
+    }
   }
 
   fadeToSilence(): void {
@@ -940,6 +1046,8 @@ export class AudioEngine {
     this.engineState = 'idle'
     this.isActivationLoading = false
 
+    this.failedTrackIds.clear()
+    this.shuffleBag.reset()
     this.climateSnapshots.clear()
     AudioEngine.instance = null
   }

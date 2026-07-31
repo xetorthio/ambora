@@ -42,8 +42,9 @@ export class LocalPlayer implements ITrackPlayer {
       }
       const onError = (): void => {
         cleanup()
+        const code = this.audio.error?.code
         const message = this.audio.error?.message ?? 'Failed to load audio file'
-        reject(new Error(message))
+        reject(new Error(`Audio error (code ${code}): ${message}`))
       }
       const cleanup = (): void => {
         this.audio.removeEventListener('canplaythrough', onReady)

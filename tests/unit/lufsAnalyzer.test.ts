@@ -1,8 +1,10 @@
 import { describe, it, expect } from 'vitest'
 import {
   computeGainCorrection,
+  computeLufsFromBuffer,
   TARGET_LUFS,
   MAX_GAIN_DB,
+  type DecodedAudio,
 } from '../../src/renderer/src/audio/LufsAnalyzer'
 
 describe('computeGainCorrection', () => {
@@ -61,5 +63,46 @@ describe('computeGainCorrection', () => {
     const correctionDb = Math.min(TARGET_LUFS - -69.9, MAX_GAIN_DB)
     const expectedGain = Math.pow(10, correctionDb / 20)
     expect(result.gainCorrection).toBeCloseTo(expectedGain, 4)
+  })
+})
+
+describe('computeLufsFromBuffer', () => {
+  const SR = 48000
+
+  const mono = (samples: Float32Array, sampleRate = SR): DecodedAudio => ({
+    sampleRate,
+    numberOfChannels: 1,
+    length: samples.length,
+    getChannelData: () => samples,
+  })
+
+  const sine = (out: Float32Array, from: number, to: number, amp: number): void => {
+    for (let i = from; i < to; i++) {
+      out[i] = amp * Math.sin((2 * Math.PI * 440 * i) / SR)
+    }
+  }
+
+  it('analyzes only the first maxSeconds of decoded PCM (ignores the tail)', () => {
+    const oneMin = 60 * SR
+    // 2 minutes: quiet first minute, much louder second minute.
+    const data = new Float32Array(2 * oneMin)
+    sine(data, 0, oneMin, 0.05)
+    sine(data, oneMin, 2 * oneMin, 0.9)
+
+    // Capping at 60s must match analyzing a buffer that is only the first 60s —
+    // i.e. the loud tail is excluded. (Regression guard for the old byte-slice.)
+    const capped = computeLufsFromBuffer(mono(data), 60)
+    const firstMinuteOnly = computeLufsFromBuffer(mono(data.subarray(0, oneMin)), 60)
+
+    expect(Number.isFinite(capped.gainCorrection)).toBe(true)
+    expect(capped.integratedLufs).toBeCloseTo(firstMinuteOnly.integratedLufs, 5)
+  })
+
+  it('does not throw and stays finite on a long buffer', () => {
+    const twoMin = new Float32Array(2 * 60 * SR)
+    sine(twoMin, 0, twoMin.length, 0.2)
+    const result = computeLufsFromBuffer(mono(twoMin), 60)
+    expect(Number.isFinite(result.gainCorrection)).toBe(true)
+    expect(result.gainCorrection).toBeGreaterThan(0)
   })
 })

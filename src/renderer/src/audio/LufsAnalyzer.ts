@@ -112,7 +112,20 @@ export function computeGainCorrection(measuredLufs: number): LufsResult {
   return { integratedLufs: measuredLufs, gainCorrection }
 }
 
-const MAX_DECODE_SAMPLES = 5 * 60 * 48000 // 5 minutes at 48kHz
+const MAX_ANALYSIS_SECONDS = 5 * 60
+
+// decodeAudioData must decode the whole container, so cap the input size to keep
+// memory bounded: files above this are skipped (no normalization) rather than
+// risking a very large decode.
+const MAX_DECODE_BYTES = 64 * 1024 * 1024
+
+/** Minimal structural shape of decoded audio — satisfied by Web Audio's AudioBuffer. */
+export interface DecodedAudio {
+  sampleRate: number
+  numberOfChannels: number
+  length: number
+  getChannelData(channel: number): Float32Array
+}
 
 export async function analyzeLufs(
   audioContext: AudioContext,
@@ -120,23 +133,39 @@ export async function analyzeLufs(
 ): Promise<LufsResult> {
   const token = await window.api.registerAudioPath(filePath)
   const response = await fetch(`local-audio:///${token}`)
-  let arrayBuffer = await response.arrayBuffer()
-
-  // For very large files, truncate to first 5 minutes before decoding
-  const bytesPerSample = 4 // rough estimate for compressed audio
-  if (arrayBuffer.byteLength > MAX_DECODE_SAMPLES * bytesPerSample) {
-    arrayBuffer = arrayBuffer.slice(0, MAX_DECODE_SAMPLES * bytesPerSample)
+  if (!response.ok) {
+    throw new Error(`LUFS fetch failed (HTTP ${response.status}) for ${filePath}`)
+  }
+  const arrayBuffer = await response.arrayBuffer()
+  if (arrayBuffer.byteLength > MAX_DECODE_BYTES) {
+    throw new Error(
+      `LUFS skipped: file too large (${arrayBuffer.byteLength} bytes) for ${filePath}`,
+    )
   }
 
   const audioBuffer = await audioContext.decodeAudioData(arrayBuffer)
-  const sampleRate = audioBuffer.sampleRate
-  const numChannels = audioBuffer.numberOfChannels
+  return computeLufsFromBuffer(audioBuffer)
+}
+
+/**
+ * Compute integrated LUFS + gain correction from already-decoded audio. Only the
+ * first `maxSeconds` of decoded samples are analyzed (bounding CPU on long
+ * tracks) — this truncates the *decoded PCM*, never the compressed container, so
+ * it cannot corrupt the stream the way slicing raw file bytes would.
+ */
+export function computeLufsFromBuffer(
+  buffer: DecodedAudio,
+  maxSeconds: number = MAX_ANALYSIS_SECONDS,
+): LufsResult {
+  const sampleRate = buffer.sampleRate
+  const numChannels = buffer.numberOfChannels
+  const analyzedLength = Math.min(buffer.length, Math.floor(maxSeconds * sampleRate))
   const coeffs = getKWeightCoeffs(sampleRate)
 
-  // Apply K-weighting to each channel
+  // Apply K-weighting to each channel (over the analyzed window only)
   const kWeightedChannels: Float32Array[] = []
   for (let ch = 0; ch < numChannels; ch++) {
-    const raw = audioBuffer.getChannelData(ch)
+    const raw = buffer.getChannelData(ch).subarray(0, analyzedLength)
     const afterShelf = applyBiquad(raw, coeffs.shelf)
     const afterHp = applyBiquad(afterShelf, coeffs.highpass)
     kWeightedChannels.push(afterHp)
