@@ -14,6 +14,7 @@ import { YouTubeAGC } from './YouTubeAGC'
 import { ShuffleBag, nextSequentialIndex } from './trackSelection'
 import { audioLog, extOf } from './audioLog'
 import { useAudioStore } from '@/store/audioStore'
+import { useDiagnosticsStore } from '@/store/diagnosticsStore'
 import type { Climate, Track } from '@/lib/types'
 
 export interface NormalizationInfo {
@@ -354,6 +355,11 @@ export class AudioEngine {
         // Remember genuine failures so selection skips this track for the rest of
         // the session instead of repeatedly landing on it.
         this.failedTrackIds.add(track.id)
+        // Surface it in the UI (persists past the engine's per-session reset).
+        useDiagnosticsStore.getState().setUnplayable(track.id, {
+          source: 'playback',
+          reason: message,
+        })
       }
       audioLog('playback', 'load-failed', {
         trackId: track.id,
@@ -390,6 +396,10 @@ export class AudioEngine {
       // A track that errors mid-playback is treated as ended; remember it so we
       // don't crossfade straight back into the same broken track.
       this.failedTrackIds.add(track.id)
+      useDiagnosticsStore.getState().setUnplayable(track.id, {
+        source: 'playback',
+        reason: err.message,
+      })
       audioLog('playback', 'runtime-error', {
         trackId: track.id,
         title: track.title,

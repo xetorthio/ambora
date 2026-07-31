@@ -1,7 +1,8 @@
 import { useState } from 'react'
-import { Play } from 'lucide-react'
+import { Play, AlertTriangle } from 'lucide-react'
 import { ICON_MAP, type ClimateIconName } from '@/lib/iconMap'
 import { ACCEPTED_AUDIO_EXTENSIONS } from '@/lib/constants'
+import { useDiagnosticsStore } from '@/store/diagnosticsStore'
 import type { Climate } from '@/lib/types'
 import type { FadeAnimation } from '@/store/audioStore'
 
@@ -43,6 +44,9 @@ export function ClimateCard({
 }: ClimateCardProps): React.JSX.Element {
   const Icon = ICON_MAP[climate.icon as ClimateIconName]
   const showGlow = isActive || fadeAnimation?.direction === 'out'
+  const unplayableCount = useDiagnosticsStore(
+    (s) => climate.tracks.filter((t) => s.unplayable[t.id]).length,
+  )
   const [isDragOver, setIsDragOver] = useState(false)
 
   function handleDragOver(e: React.DragEvent): void {
@@ -131,9 +135,20 @@ export function ClimateCard({
         />
       </div>
       <div className="flex items-center justify-between">
-        <span className="text-[11px] text-text-tertiary">
-          {climate.tracks.length} {climate.tracks.length === 1 ? 'track' : 'tracks'}
-        </span>
+        <div className="flex items-center gap-2">
+          <span className="text-[11px] text-text-tertiary">
+            {climate.tracks.length} {climate.tracks.length === 1 ? 'track' : 'tracks'}
+          </span>
+          {unplayableCount > 0 && (
+            <span
+              className="flex items-center gap-1 rounded-full bg-amber-500/10 px-1.5 py-0.5 text-[10px] font-medium text-amber-400"
+              title={`${unplayableCount} track${unplayableCount === 1 ? '' : 's'} can't be played`}
+            >
+              <AlertTriangle className="size-3" />
+              {unplayableCount}
+            </span>
+          )}
+        </div>
         {climate.tracks.length > 0 && (
           <span
             role="button"

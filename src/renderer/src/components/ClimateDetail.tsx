@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { ArrowLeft, Settings, Plus, Upload } from 'lucide-react'
 import {
   AlertDialog,
@@ -25,7 +25,9 @@ import { DEFAULTS } from '@/lib/constants'
 import { useInlineEdit } from '@/hooks/useInlineEdit'
 import { useCampaignStore } from '@/store/campaignStore'
 import { useAudioStore } from '@/store/audioStore'
+import { useDiagnosticsStore } from '@/store/diagnosticsStore'
 import { useAudioEngine } from '@/hooks/useAudioEngine'
+import { probeLocalTrack } from '@/audio/probeTrack'
 import type { Climate, Track } from '@/lib/types'
 import { toast } from 'sonner'
 import { getLocalFileDuration } from '@/lib/utils'
@@ -62,6 +64,43 @@ export function ClimateDetail({
 
   const Icon = ICON_MAP[climate.icon as ClimateIconName]
 
+  // Proactively probe local files for decodability so unplayable tracks are
+  // flagged before playback. Runs on open and whenever the track list changes
+  // (adding a file re-runs this and probes just the new one). Sequential to keep
+  // it gentle, and deduped via the store's `probed` set.
+  useEffect(() => {
+    const toProbe = climate.tracks.filter(
+      (t) =>
+        t.source === 'local' && t.localFilePath && !useDiagnosticsStore.getState().hasProbed(t.id),
+    )
+    if (toProbe.length === 0) return
+
+    let cancelled = false
+    void (async () => {
+      for (const track of toProbe) {
+        if (cancelled) return
+        const store = useDiagnosticsStore.getState()
+        store.markProbed(track.id)
+        const { ok, reason } = await probeLocalTrack(track.localFilePath!)
+        if (cancelled) return
+        if (!ok) {
+          store.setUnplayable(track.id, {
+            source: 'probe',
+            reason: reason ?? 'File could not be opened',
+          })
+        } else if (store.unplayable[track.id]?.source === 'probe') {
+          // File now loads — clear a stale probe flag. Leave playback-sourced
+          // flags (a real runtime failure) in place.
+          store.clearUnplayable(track.id)
+        }
+      }
+    })()
+
+    return () => {
+      cancelled = true
+    }
+  }, [climate.id, climate.tracks])
+
   function handleDeleteClimate(): void {
     deleteClimate(campaignId, climate.id)
     onClose()
@@ -75,6 +114,7 @@ export function ClimateDetail({
 
   function handleDeleteTrack(trackId: string): void {
     removeTrack(campaignId, climate.id, trackId)
+    useDiagnosticsStore.getState().forgetTrack(trackId)
     toast.success('Track removed')
   }
 
