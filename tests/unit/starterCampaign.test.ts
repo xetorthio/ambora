@@ -50,8 +50,8 @@ describe('createStarterCampaign', () => {
     expect(campaign.name).toBe('Starter Campaign')
   })
 
-  it('has exactly 13 climates', () => {
-    expect(campaign.climates).toHaveLength(13)
+  it('has exactly 15 climates', () => {
+    expect(campaign.climates).toHaveLength(15)
   })
 
   it('each climate has exactly 5 tracks', () => {
@@ -92,9 +92,10 @@ describe('createStarterCampaign', () => {
     }
   })
 
-  it('climate orders are sequential 0-12', () => {
+  // Derived from the actual climate count so adding a mood doesn't break this.
+  it('climate orders are sequential from 0', () => {
     const orders = campaign.climates.map((c) => c.order)
-    expect(orders).toEqual([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12])
+    expect(orders).toEqual(campaign.climates.map((_, i) => i))
   })
 
   it('track orders are sequential 0-4 within each climate', () => {
