@@ -178,8 +178,13 @@ function registerIpcHandlers(): void {
 
 // Register custom protocol for serving local audio files.
 // Must be called before app is ready.
+// `corsEnabled` matters for the fetch() consumers (ambient clip decoding, LUFS
+// analysis): the renderer has an http:// origin, so reading this scheme with
+// fetch() is a cross-origin request. Without it Chromium blocks the request
+// outright and the caller only sees "Failed to fetch". The <audio> element path
+// is unaffected either way — media loads are no-cors.
 protocol.registerSchemesAsPrivileged([
-  { scheme: 'local-audio', privileges: { stream: true, supportFetchAPI: true } },
+  { scheme: 'local-audio', privileges: { stream: true, supportFetchAPI: true, corsEnabled: true } },
 ])
 
 // This method will be called when Electron has finished
@@ -199,17 +204,21 @@ app.whenReady().then(async () => {
   // Serve local audio files via custom protocol so the renderer
   // can load them regardless of its own origin (http:// in dev, file:// in prod).
   protocol.handle('local-audio', (request) => {
+    // Present on every response, including errors: without it a fetch() caller
+    // sees a generic "Failed to fetch" instead of the real status.
+    const cors = { 'Access-Control-Allow-Origin': '*' }
+
     const token = new URL(request.url).pathname.replace(/^\/+/, '')
     const filePath = audioPathRegistry.get(token)
     if (!filePath) {
-      return new Response('Not found', { status: 404 })
+      return new Response('Not found', { status: 404, headers: cors })
     }
 
     let fileSize: number
     try {
       fileSize = statSync(filePath).size
     } catch {
-      return new Response('Not found', { status: 404 })
+      return new Response('Not found', { status: 404, headers: cors })
     }
 
     const contentType = audioMimeForPath(filePath)
@@ -239,13 +248,14 @@ app.whenReady().then(async () => {
         if (start > end || start >= fileSize) {
           return new Response('Range Not Satisfiable', {
             status: 416,
-            headers: { 'Content-Range': `bytes */${fileSize}` },
+            headers: { ...cors, 'Content-Range': `bytes */${fileSize}` },
           })
         }
 
         return new Response(toWebStream(start, end), {
           status: 206,
           headers: {
+            ...cors,
             'Content-Type': contentType,
             'Content-Length': String(end - start + 1),
             'Content-Range': `bytes ${start}-${end}/${fileSize}`,
@@ -260,6 +270,7 @@ app.whenReady().then(async () => {
     return new Response(toWebStream(0, fileSize - 1), {
       status: 200,
       headers: {
+        ...cors,
         'Content-Type': contentType,
         'Content-Length': String(fileSize),
         'Accept-Ranges': 'bytes',
