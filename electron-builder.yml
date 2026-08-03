@@ -34,7 +34,11 @@ mac:
     - NSMicrophoneUsageDescription: Application requests access to the device's microphone.
     - NSDocumentsFolderUsageDescription: Application requests access to the user's Documents folder.
     - NSDownloadsFolderUsageDescription: Application requests access to the user's Downloads folder.
-  notarize: false
+  # Notarization runs only when the App Store Connect API key env vars are
+  # present (APPLE_API_KEY / APPLE_API_KEY_ID / APPLE_API_ISSUER). Local builds
+  # without them still produce a signed-but-unnotarized app, which is fine for
+  # testing on the build machine.
+  notarize: true
 dmg:
   artifactName: ${name}-${version}.${ext}
 linux:
