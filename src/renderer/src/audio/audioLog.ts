@@ -13,13 +13,14 @@ import type { Track } from '@/lib/types'
  * The `source` field is the key to triage: `playback` = real track load/runtime
  * failures (these actually skip tracks); `lufs` = background loudness-analysis
  * decode failures (harmless to playback — do not confuse with `playback`);
- * `select` = shuffle/advance selection events.
+ * `select` = shuffle/advance selection events; `ambient` = ambient-layer clip
+ * decoding and scene lifecycle.
  */
 
 const DEBUG_FLAG = 'AMBORA_DEBUG_AUDIO'
 const BUFFER_CAP = 500
 
-export type AudioLogSource = 'playback' | 'lufs' | 'select'
+export type AudioLogSource = 'playback' | 'lufs' | 'select' | 'ambient'
 
 export interface AudioLogRecord {
   t: number

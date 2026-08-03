@@ -25,6 +25,7 @@ export function NowPlayingBar(): React.JSX.Element {
   let climateName: string | null = null
   let climateColor: string | null = null
   let trackTitle: string | null = null
+  let hasTracks = false
 
   if (activeClimateId) {
     for (const campaign of campaigns) {
@@ -32,6 +33,7 @@ export function NowPlayingBar(): React.JSX.Element {
       if (climate) {
         climateName = climate.name
         climateColor = climate.color
+        hasTracks = climate.tracks.length > 0
         if (activeTrackId) {
           const track = climate.tracks.find((t) => t.id === activeTrackId)
           if (track) trackTitle = track.title
@@ -86,13 +88,20 @@ export function NowPlayingBar(): React.JSX.Element {
             <span className="shrink-0 text-[13px] font-medium text-text-primary">
               {climateName}
             </span>
-            {trackTitle && (
+            {trackTitle ? (
               <>
                 <span className="text-[13px] text-text-tertiary">&middot;</span>
                 <span className="min-w-0 truncate text-[13px] text-text-secondary">
                   {trackTitle}
                 </span>
               </>
+            ) : (
+              !hasTracks && (
+                <>
+                  <span className="text-[13px] text-text-tertiary">&middot;</span>
+                  <span className="text-[13px] text-text-secondary">Ambience only</span>
+                </>
+              )
             )}
           </div>
         )}
@@ -104,7 +113,12 @@ export function NowPlayingBar(): React.JSX.Element {
         <Button variant="ghost" size="icon-sm" disabled={isIdle} onClick={handlePlayPause}>
           {isPlaying ? <Pause className="size-[18px]" /> : <Play className="size-[18px]" />}
         </Button>
-        <Button variant="ghost" size="icon-sm" disabled={isIdle || !isPlaying} onClick={handleSkip}>
+        <Button
+          variant="ghost"
+          size="icon-sm"
+          disabled={isIdle || !isPlaying || !hasTracks}
+          onClick={handleSkip}
+        >
           <SkipForward className="size-[18px]" />
         </Button>
         <Button variant="ghost" size="icon-sm" onClick={toggleShuffle}>

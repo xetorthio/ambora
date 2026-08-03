@@ -212,6 +212,253 @@ button {
   }
 }
 
+/* ── Ambient Drawer ──
+   Sits above Now Playing in normal flow: expanding it shrinks the climate grid
+   rather than covering it, so the GM can still see and switch scenes while the
+   one-shot pads stay one tap away. */
+.ambient {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  border-top: 1px solid var(--surface-2);
+  background: var(--surface-1);
+}
+
+.ambient__handle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  height: 44px;
+  min-height: 44px;
+  padding: 0 16px;
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+.ambient__handle-icon,
+.ambient__handle-chevron {
+  display: flex;
+  align-items: center;
+}
+
+.ambient__handle-icon svg {
+  width: 16px;
+  height: 16px;
+}
+
+.ambient__handle-chevron svg {
+  width: 16px;
+  height: 16px;
+}
+
+.ambient__handle-label {
+  font-weight: 500;
+}
+
+.ambient__handle-count {
+  flex: 1;
+  text-align: left;
+  color: var(--text-secondary);
+  opacity: 0.7;
+}
+
+.ambient__panel {
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  max-height: 45dvh;
+  border-bottom: 1px solid var(--surface-2);
+}
+
+/* ── Ambient Layer Row ── */
+.ambient-layer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 48px;
+  padding: 0 8px 0 4px;
+}
+
+.ambient-layer__toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+}
+
+.ambient-layer__dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 2px solid var(--text-secondary);
+  background: transparent;
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease;
+}
+
+.ambient-layer__toggle[aria-checked='true'] .ambient-layer__dot {
+  border-color: transparent;
+  background: var(--layer-color, var(--accent));
+}
+
+/* Level meter: animated while the layer is audible, flat while it waits. */
+.ambient-layer__meter {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 2px;
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+}
+
+.ambient-layer__meter span {
+  width: 2px;
+  height: 3px;
+  border-radius: 1px;
+  background: var(--surface-3);
+  transform-origin: bottom;
+}
+
+.ambient-layer[data-sounding='true'] .ambient-layer__meter span {
+  height: 11px;
+  background: var(--layer-color, var(--accent));
+  animation: ambient-pulse 1.1s ease-in-out infinite;
+}
+
+.ambient-layer[data-sounding='true'] .ambient-layer__meter span:nth-child(2) {
+  height: 14px;
+  animation-delay: 160ms;
+}
+
+.ambient-layer[data-sounding='true'] .ambient-layer__meter span:nth-child(3) {
+  animation-delay: 320ms;
+}
+
+/* Hidden entirely when the layer isn't part of a running scene. */
+.ambient-layer[data-enabled='false'] .ambient-layer__meter,
+.ambient[data-live='false'] .ambient-layer__meter {
+  visibility: hidden;
+}
+
+@keyframes ambient-pulse {
+  0%,
+  100% {
+    opacity: 0.35;
+    transform: scaleY(0.4);
+  }
+  50% {
+    opacity: 1;
+    transform: scaleY(1);
+  }
+}
+
+.ambient-layer__name {
+  flex: 0 0 34%;
+  min-width: 0;
+  font-size: 13px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: color 0.2s ease;
+}
+
+.ambient-layer[data-enabled='false'] .ambient-layer__name {
+  color: var(--text-secondary);
+}
+
+.ambient-layer__volume {
+  flex: 1;
+  min-width: 0;
+  -webkit-appearance: none;
+  appearance: none;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--surface-3);
+  outline: none;
+}
+
+.ambient-layer__volume::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--text-primary);
+  border: none;
+}
+
+.ambient-layer__volume::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--text-primary);
+  border: none;
+}
+
+.ambient-layer[data-enabled='false'] .ambient-layer__volume {
+  opacity: 0.4;
+}
+
+/* ── One-shot Pads ── */
+.ambient__shots {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+  padding: 8px 12px 12px;
+  border-top: 1px solid var(--surface-2);
+}
+
+.ambient-shot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 48px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  background: var(--surface-2);
+  border: 1px solid transparent;
+  color: var(--text-primary);
+  font-size: 13px;
+  font-weight: 500;
+  transition:
+    transform 0.15s ease,
+    background 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.ambient-shot svg {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
+
+.ambient-shot__label {
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ambient-shot:active {
+  transform: scale(0.96);
+}
+
+.ambient-shot[data-enabled='false'] {
+  opacity: 0.4;
+  pointer-events: none;
+}
+
+/* Confirms the trigger landed without the GM having to hear the room. */
+.ambient-shot.firing {
+  background: var(--surface-3);
+  border-color: var(--shot-color, var(--accent));
+}
+
 /* ── Now Playing ── */
 .now-playing {
   display: flex;
@@ -448,5 +695,20 @@ button {
 
   .now-playing__track {
     transition: none;
+  }
+
+  .ambient-shot:active {
+    transform: none;
+  }
+
+  .ambient-shot,
+  .ambient-layer__dot {
+    transition: none;
+  }
+
+  /* Keep the meter readable as a static level rather than a pulse. */
+  .ambient-layer[data-sounding='true'] .ambient-layer__meter span {
+    animation: none;
+    opacity: 1;
   }
 }

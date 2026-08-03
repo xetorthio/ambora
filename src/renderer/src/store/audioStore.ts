@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { DEFAULTS } from '@/lib/constants'
+import type { AmbientLayerRuntime } from '@/lib/types'
 
 export interface FadeAnimation {
   climateId: string
@@ -16,6 +17,15 @@ interface AudioStore {
   isFadingToSilence: boolean
   isShuffled: boolean
   fadeAnimations: FadeAnimation[]
+  /**
+   * Per-layer state for the active climate, keyed by layer id. Ephemeral by
+   * design: the stored layer holds the scene's authored defaults, and this map
+   * is reseeded from them every time the climate is activated, so a session's
+   * tweaks can never quietly rewrite a carefully-built scene.
+   */
+  ambientRuntime: Record<string, AmbientLayerRuntime>
+  /** Layer currently being auditioned in the desktop editor, if any. */
+  auditioningLayerId: string | null
 
   setIsPlaying: (isPlaying: boolean) => void
   setVolume: (volume: number) => void
@@ -25,6 +35,12 @@ interface AudioStore {
   toggleShuffle: () => void
   startFadeAnimation: (animation: FadeAnimation) => void
   clearAllFadeAnimations: () => void
+  setAmbientRuntime: (runtime: Record<string, AmbientLayerRuntime>) => void
+  setAmbientLayerEnabled: (layerId: string, enabled: boolean) => void
+  setAmbientLayerVolume: (layerId: string, volume: number) => void
+  markAmbientLayerTriggered: (layerId: string) => void
+  setAmbientLayerSounding: (layerId: string, sounding: boolean) => void
+  setAuditioningLayerId: (layerId: string | null) => void
 }
 
 export const useAudioStore = create<AudioStore>((set) => ({
@@ -35,6 +51,8 @@ export const useAudioStore = create<AudioStore>((set) => ({
   isFadingToSilence: false,
   isShuffled: true,
   fadeAnimations: [],
+  ambientRuntime: {},
+  auditioningLayerId: null,
 
   setIsPlaying: (isPlaying) => set({ isPlaying }),
   setVolume: (volume) => set({ volume }),
@@ -50,4 +68,47 @@ export const useAudioStore = create<AudioStore>((set) => ({
       ],
     })),
   clearAllFadeAnimations: () => set({ fadeAnimations: [] }),
+
+  setAmbientRuntime: (ambientRuntime) => set({ ambientRuntime }),
+
+  setAmbientLayerEnabled: (layerId, enabled) =>
+    set((state) => {
+      const current = state.ambientRuntime[layerId]
+      if (!current || current.enabled === enabled) return state
+      return {
+        ambientRuntime: { ...state.ambientRuntime, [layerId]: { ...current, enabled } },
+      }
+    }),
+
+  setAmbientLayerVolume: (layerId, volume) =>
+    set((state) => {
+      const current = state.ambientRuntime[layerId]
+      if (!current || current.volume === volume) return state
+      return {
+        ambientRuntime: { ...state.ambientRuntime, [layerId]: { ...current, volume } },
+      }
+    }),
+
+  markAmbientLayerTriggered: (layerId) =>
+    set((state) => {
+      const current = state.ambientRuntime[layerId]
+      if (!current) return state
+      return {
+        ambientRuntime: {
+          ...state.ambientRuntime,
+          [layerId]: { ...current, triggeredAt: Date.now() },
+        },
+      }
+    }),
+
+  setAmbientLayerSounding: (layerId, sounding) =>
+    set((state) => {
+      const current = state.ambientRuntime[layerId]
+      if (!current || (current.sounding ?? false) === sounding) return state
+      return {
+        ambientRuntime: { ...state.ambientRuntime, [layerId]: { ...current, sounding } },
+      }
+    }),
+
+  setAuditioningLayerId: (auditioningLayerId) => set({ auditioningLayerId }),
 }))

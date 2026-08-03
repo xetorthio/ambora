@@ -3,6 +3,7 @@ import { useAudioStore } from '@/store/audioStore'
 import { useCampaignStore } from '@/store/campaignStore'
 import { useConnectionStore } from '@/store/connectionStore'
 import { AudioEngine } from '@/audio/AudioEngine'
+import { AmbientEngine } from '@/audio/AmbientEngine'
 import { toast } from 'sonner'
 import type { PlaybackState, RemoteFullState } from '@/lib/types'
 
@@ -18,6 +19,7 @@ function getPlaybackState(): PlaybackState {
     isFadingToSilence: audio.isFadingToSilence,
     isShuffled: audio.isShuffled,
     fadeAnimations: audio.fadeAnimations,
+    ambientRuntime: audio.ambientRuntime,
   }
 }
 
@@ -61,7 +63,8 @@ export function useRemoteSync(): void {
         state.volume !== prev.volume ||
         state.isFadingToSilence !== prev.isFadingToSilence ||
         state.isShuffled !== prev.isShuffled ||
-        state.fadeAnimations !== prev.fadeAnimations
+        state.fadeAnimations !== prev.fadeAnimations ||
+        state.ambientRuntime !== prev.ambientRuntime
 
       if (changed) {
         const playback = getPlaybackState()
@@ -118,6 +121,24 @@ export function useRemoteSync(): void {
         }
         case 'toggle-shuffle': {
           audioStore.toggleShuffle()
+          break
+        }
+        case 'set-layer-enabled': {
+          AmbientEngine.getInstance().setLayerEnabled(
+            command.payload.layerId,
+            command.payload.enabled,
+          )
+          break
+        }
+        case 'set-layer-volume': {
+          AmbientEngine.getInstance().setLayerVolume(
+            command.payload.layerId,
+            command.payload.volume,
+          )
+          break
+        }
+        case 'trigger-layer': {
+          AmbientEngine.getInstance().triggerLayer(command.payload.layerId)
           break
         }
       }

@@ -1,11 +1,14 @@
-import type { Campaign, Climate, Track } from '@/lib/types'
+import type { AmbientClip, AmbientLayer, Campaign, Climate, Track } from '@/lib/types'
 import type {
   AmboraExportFile,
+  ExportedAmbientClip,
+  ExportedAmbientLayer,
   ExportedCampaign,
   ExportedClimate,
   ExportedTrack,
 } from '../../../shared/exportTypes'
 import { AMBORA_FILE_VERSION } from '../../../shared/exportTypes'
+import { AMBIENT_DEFAULTS } from '@/lib/constants'
 
 function exportTrack(track: Track): ExportedTrack {
   const exported: ExportedTrack = {
@@ -19,8 +22,28 @@ function exportTrack(track: Track): ExportedTrack {
   return exported
 }
 
-function exportClimate(climate: Climate): ExportedClimate {
+function exportAmbientLayer(layer: AmbientLayer): ExportedAmbientLayer {
   return {
+    name: layer.name,
+    mode: layer.mode,
+    enabled: layer.enabled,
+    volume: layer.volume,
+    clipOrder: layer.clipOrder,
+    minDelaySec: layer.minDelaySec,
+    maxDelaySec: layer.maxDelaySec,
+    order: layer.order,
+    // Titles only — the paths are machine-specific. The importing GM re-points
+    // each clip at their own copy of the file.
+    clips: layer.clips.map((clip) => {
+      const exported: ExportedAmbientClip = { title: clip.title, order: clip.order }
+      if (clip.duration !== undefined) exported.duration = clip.duration
+      return exported
+    }),
+  }
+}
+
+function exportClimate(climate: Climate): ExportedClimate {
+  const exported: ExportedClimate = {
     name: climate.name,
     color: climate.color,
     icon: climate.icon,
@@ -28,6 +51,11 @@ function exportClimate(climate: Climate): ExportedClimate {
     crossfadeDuration: climate.crossfadeDuration,
     tracks: climate.tracks.map(exportTrack),
   }
+  const layers = climate.ambientLayers ?? []
+  if (layers.length > 0) {
+    exported.ambientLayers = layers.map(exportAmbientLayer)
+  }
+  return exported
 }
 
 function exportCampaign(campaign: Campaign): ExportedCampaign {
@@ -140,6 +168,56 @@ export function deserializeCampaignFromImport(raw: string): ImportResult {
         )
       }
 
+      const ambientLayers: AmbientLayer[] = []
+      let ambientClipCount = 0
+
+      if (Array.isArray(cl.ambientLayers)) {
+        for (const rawLayer of cl.ambientLayers) {
+          const l = rawLayer as Record<string, unknown>
+          const clips: AmbientClip[] = []
+
+          if (Array.isArray(l.clips)) {
+            for (const rawClip of l.clips) {
+              const c = rawClip as Record<string, unknown>
+              const clip: AmbientClip = {
+                id: crypto.randomUUID(),
+                title: typeof c.title === 'string' ? c.title : 'Untitled Clip',
+                // Placeholder: the file lives on the exporting machine. The clip
+                // is kept so the layer's shape survives and the UI can show the
+                // GM exactly which files to re-point.
+                localFilePath: '',
+                order: typeof c.order === 'number' ? c.order : clips.length,
+              }
+              if (typeof c.duration === 'number') clip.duration = c.duration
+              clips.push(clip)
+            }
+          }
+          ambientClipCount += clips.length
+
+          ambientLayers.push({
+            id: crypto.randomUUID(),
+            name: typeof l.name === 'string' ? l.name : 'Untitled Layer',
+            mode: l.mode === 'random' || l.mode === 'oneshot' ? l.mode : 'loop',
+            enabled: typeof l.enabled === 'boolean' ? l.enabled : true,
+            volume: typeof l.volume === 'number' ? l.volume : AMBIENT_DEFAULTS.volume,
+            clips,
+            clipOrder:
+              l.clipOrder === 'random' || l.clipOrder === 'sequential' ? l.clipOrder : 'shuffle',
+            minDelaySec:
+              typeof l.minDelaySec === 'number' ? l.minDelaySec : AMBIENT_DEFAULTS.minDelaySec,
+            maxDelaySec:
+              typeof l.maxDelaySec === 'number' ? l.maxDelaySec : AMBIENT_DEFAULTS.maxDelaySec,
+            order: typeof l.order === 'number' ? l.order : ambientLayers.length,
+          })
+        }
+      }
+
+      if (ambientClipCount > 0) {
+        warnings.push(
+          `Climate "${String(cl.name)}" has ${String(ambientClipCount)} ambient clip${ambientClipCount > 1 ? 's' : ''} whose audio files must be re-added (file paths are not portable)`,
+        )
+      }
+
       climates.push({
         id: crypto.randomUUID(),
         name: typeof cl.name === 'string' ? cl.name : 'Untitled Climate',
@@ -148,6 +226,7 @@ export function deserializeCampaignFromImport(raw: string): ImportResult {
         order: typeof cl.order === 'number' ? cl.order : climates.length,
         crossfadeDuration: typeof cl.crossfadeDuration === 'number' ? cl.crossfadeDuration : 4,
         tracks,
+        ...(ambientLayers.length > 0 ? { ambientLayers } : {}),
       })
     }
   }

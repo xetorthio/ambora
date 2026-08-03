@@ -12,6 +12,8 @@ import { analyzeLufs, computeGainCorrection } from './LufsAnalyzer'
 import { NormalizationChain } from './NormalizationChain'
 import { YouTubeAGC } from './YouTubeAGC'
 import { ShuffleBag, nextSequentialIndex } from './trackSelection'
+import { AmbientEngine } from './AmbientEngine'
+import { getAudioContext, closeAudioContext } from './audioContext'
 import { audioLog, extOf } from './audioLog'
 import { useAudioStore } from '@/store/audioStore'
 import { useDiagnosticsStore } from '@/store/diagnosticsStore'
@@ -42,7 +44,12 @@ export interface ITrackPlayer {
 
 type ChannelId = 'A' | 'B'
 type ChannelState = 'inactive' | 'loading' | 'active' | 'fading-out'
-type EngineState = 'idle' | 'playing' | 'crossfading' | 'fading-to-silence'
+/**
+ * `ambient` means a climate with ambient layers but no music tracks is playing:
+ * the AmbientEngine is running and no music channel is live, so every
+ * channel-touching operation must be skipped.
+ */
+type EngineState = 'idle' | 'playing' | 'crossfading' | 'fading-to-silence' | 'ambient'
 
 interface Channel {
   id: ChannelId
@@ -105,6 +112,7 @@ export class AudioEngine {
   // instead of repeatedly landing on them. Cleared on (re)activation and goIdle.
   private failedTrackIds = new Set<string>()
   private shuffleBag = new ShuffleBag()
+  private ambient = AmbientEngine.getInstance()
 
   private constructor() {
     this.crossfadeManager = new CrossfadeManager()
@@ -143,7 +151,8 @@ export class AudioEngine {
 
   private ensureContext(): AudioContext {
     if (!this.audioContext) {
-      this.audioContext = new AudioContext()
+      // Shared with the AmbientEngine so music and ambient graph into one output.
+      this.audioContext = getAudioContext()
 
       const gainA = this.audioContext.createGain()
       gainA.gain.value = 0
@@ -681,6 +690,9 @@ export class AudioEngine {
 
   private goIdle(): void {
     this.stopYouTubeAGC()
+    // Short fade rather than a hard cut — goIdle can fire mid-scene when every
+    // track fails, and clipping a looping layer to silence is audible.
+    this.ambient.stop(0.3)
     this.autoAdvancing = false
     this.crossfadeManager.cancelAll()
     if (this.channelA) this.disposeChannel(this.channelA)
@@ -710,16 +722,23 @@ export class AudioEngine {
     if (
       !startTrackId &&
       useAudioStore.getState().activeClimateId === climate.id &&
-      this.engineState === 'playing'
+      (this.engineState === 'playing' || this.engineState === 'ambient')
     ) {
       return
     }
 
     if (climate.tracks.length === 0) {
+      // A climate can legitimately be ambience only — wind and birds with no
+      // score. Only a climate with nothing at all is an error.
+      if ((climate.ambientLayers ?? []).length > 0) {
+        this.activateAmbientOnly(climate)
+        return
+      }
       toast.error('This climate has no tracks')
       return
     }
 
+    const previousState = this.engineState
     const mySeq = ++this.activationSeq
     this.isActivationLoading = true
 
@@ -766,11 +785,22 @@ export class AudioEngine {
     this.currentClimate = climate
     this.currentTrackIndex = startTrackIndex
 
-    if (this.engineState === 'idle' || this.engineState === 'fading-to-silence') {
+    if (
+      this.engineState === 'idle' ||
+      this.engineState === 'fading-to-silence' ||
+      this.engineState === 'ambient'
+    ) {
       // Clean up any existing state
       if (this.channelA) this.disposeChannel(this.channelA)
       if (this.channelB) this.disposeChannel(this.channelB)
       this.activeChannelId = 'A'
+
+      // Coming from an ambient-only scene there is a live ambient stack to swap
+      // out, so use the scene crossfade rather than the short cold-start fade.
+      this.ambient.startClimate(
+        climate,
+        previousState === 'ambient' ? climate.crossfadeDuration : FADE_IN_DURATION,
+      )
 
       const channel = this.getChannel('A')
       const track = sorted[startTrackIndex]
@@ -827,6 +857,10 @@ export class AudioEngine {
         isPlaying: true,
         isFadingToSilence: false,
       })
+
+      // Ambient rides the same crossfade as the music: the outgoing climate's
+      // layers fade out while the incoming climate's fade in.
+      this.ambient.startClimate(climate, duration)
 
       this.stopYouTubeAGC()
       const loaded = await this.loadAndPlayOnChannel(inChannel, track, startPositionSec, mySeq)
@@ -889,6 +923,80 @@ export class AudioEngine {
     }
   }
 
+  /**
+   * Activate a climate that has ambient layers but no music tracks. Any music
+   * that was playing fades out over the scene crossfade while the ambient stack
+   * fades in, so the transition sounds the same as a music-to-music switch.
+   */
+  private activateAmbientOnly(climate: Climate): void {
+    const mySeq = ++this.activationSeq
+    this.isActivationLoading = false
+    this.ensureContext()
+
+    const wasPlayingMusic = this.engineState === 'playing' || this.engineState === 'crossfading'
+    const previousClimateId = useAudioStore.getState().activeClimateId
+    const duration = climate.crossfadeDuration
+
+    if (this.engineState === 'crossfading') {
+      this.completePendingCrossfade()
+    }
+    this.crossfadeManager.cancelAll()
+
+    if (wasPlayingMusic) {
+      this.saveClimateSnapshot()
+      this.stopYouTubeAGC()
+      const channel = this.getActiveChannel()
+      if (channel.volumeController) {
+        this.crossfadeManager.fadeChannel(channel.id, channel.volumeController, 0, duration, () => {
+          if (this.activationSeq !== mySeq) return
+          this.disposeChannel(channel)
+          removeOrphanedYouTubeContainers()
+        })
+      } else {
+        this.disposeChannel(channel)
+      }
+    } else {
+      if (this.channelA) this.disposeChannel(this.channelA)
+      if (this.channelB) this.disposeChannel(this.channelB)
+    }
+
+    this.currentClimate = climate
+    this.currentTrackIndex = 0
+    this.failedTrackIds.clear()
+    this.shuffleBag.reset()
+    this.autoAdvancing = false
+    this.pendingActiveChannelId = null
+    this.engineState = 'ambient'
+
+    this.updateStore({
+      activeClimateId: climate.id,
+      activeTrackId: null,
+      isPlaying: true,
+      isFadingToSilence: false,
+    })
+
+    const store = useAudioStore.getState()
+    store.clearAllFadeAnimations()
+    const startedAt = Date.now()
+    const durationMs = duration * 1000
+    if (wasPlayingMusic && previousClimateId && previousClimateId !== climate.id) {
+      store.startFadeAnimation({
+        climateId: previousClimateId,
+        direction: 'out',
+        durationMs,
+        startedAt,
+      })
+    }
+    store.startFadeAnimation({ climateId: climate.id, direction: 'in', durationMs, startedAt })
+    // No crossfade callback to hang the cleanup off here, so clear on a timer.
+    setTimeout(() => {
+      if (this.activationSeq !== mySeq) return
+      useAudioStore.getState().clearAllFadeAnimations()
+    }, durationMs)
+
+    this.ambient.startClimate(climate, duration)
+  }
+
   async nextTrack(): Promise<void> {
     if (!this.currentClimate) return
 
@@ -933,8 +1041,13 @@ export class AudioEngine {
   }
 
   fadeToSilence(): void {
+    if (this.engineState === 'ambient') {
+      this.fadeAmbientOnlyToSilence()
+      return
+    }
     if (this.engineState !== 'playing') return
 
+    this.ambient.fadeOut(FADE_TO_SILENCE_DURATION)
     this.stopYouTubeAGC()
     this.saveClimateSnapshot()
     this.engineState = 'fading-to-silence'
@@ -966,9 +1079,52 @@ export class AudioEngine {
     )
   }
 
+  /**
+   * Pause for an ambient-only scene. There is no music channel to ride the fade
+   * out, so the ambient stack is faded and the store flipped on a timer.
+   */
+  private fadeAmbientOnlyToSilence(): void {
+    const store = useAudioStore.getState()
+    if (!store.isPlaying) return
+
+    const mySeq = this.activationSeq
+    this.updateStore({ isFadingToSilence: true })
+
+    store.clearAllFadeAnimations()
+    if (store.activeClimateId) {
+      store.startFadeAnimation({
+        climateId: store.activeClimateId,
+        direction: 'out',
+        durationMs: FADE_TO_SILENCE_DURATION * 1000,
+        startedAt: Date.now(),
+      })
+    }
+
+    this.ambient.fadeOut(FADE_TO_SILENCE_DURATION)
+    setTimeout(() => {
+      if (this.activationSeq !== mySeq) return
+      this.updateStore({ isPlaying: false })
+      useAudioStore.getState().clearAllFadeAnimations()
+    }, FADE_TO_SILENCE_DURATION * 1000)
+  }
+
   resume(): void {
     const store = useAudioStore.getState()
     if (!store.activeClimateId || store.isPlaying) return
+
+    if (this.engineState === 'ambient') {
+      this.ensureContext()
+      this.updateStore({ isPlaying: true, isFadingToSilence: false })
+      store.clearAllFadeAnimations()
+      store.startFadeAnimation({
+        climateId: store.activeClimateId,
+        direction: 'in',
+        durationMs: FADE_IN_DURATION * 1000,
+        startedAt: Date.now(),
+      })
+      this.ambient.fadeIn(FADE_IN_DURATION)
+      return
+    }
 
     const channel = this.getActiveChannel()
     if (!channel.player) return
@@ -976,6 +1132,7 @@ export class AudioEngine {
     this.ensureContext()
     channel.player.play()
     this.engineState = 'playing'
+    this.ambient.fadeIn(FADE_IN_DURATION)
 
     this.updateStore({ isPlaying: true, isFadingToSilence: false })
 
@@ -1011,7 +1168,8 @@ export class AudioEngine {
       compressorReductionDb: 0,
       analyser: null,
     }
-    if (this.engineState === 'idle') return none
+    // Nothing is graphed through a music channel in either state.
+    if (this.engineState === 'idle' || this.engineState === 'ambient') return none
 
     // During crossfade, prefer the incoming channel
     const channelId = this.pendingActiveChannelId ?? this.activeChannelId
@@ -1040,6 +1198,7 @@ export class AudioEngine {
   }
 
   dispose(): void {
+    this.ambient.dispose()
     this.youtubeAGC.dispose()
     this.stopPositionMonitor()
     this.autoAdvancing = false
@@ -1049,7 +1208,7 @@ export class AudioEngine {
     removeOrphanedYouTubeContainers()
     this.lufsCache.dispose()
     this.volumeUnsub?.()
-    this.audioContext?.close()
+    closeAudioContext()
     this.audioContext = null
     this.channelA = null
     this.channelB = null

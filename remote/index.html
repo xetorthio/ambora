@@ -96,6 +96,25 @@
         <div class="climate-grid__empty">No campaign selected</div>
       </main>
 
+      <!-- Ambient Drawer — hidden unless the active climate has layers -->
+      <section id="ambient" class="ambient" hidden>
+        <div id="ambient-panel" class="ambient__panel" hidden>
+          <div id="ambient-layers" class="ambient__layers"></div>
+          <div id="ambient-shots" class="ambient__shots" hidden></div>
+        </div>
+        <button
+          id="ambient-handle"
+          class="ambient__handle"
+          aria-expanded="false"
+          aria-controls="ambient-panel"
+        >
+          <span id="ambient-icon" class="ambient__handle-icon"></span>
+          <span class="ambient__handle-label">Ambient</span>
+          <span id="ambient-count" class="ambient__handle-count"></span>
+          <span id="ambient-chevron" class="ambient__handle-chevron"></span>
+        </button>
+      </section>
+
       <!-- Now Playing -->
       <div class="now-playing">
         <span id="now-playing-dot" class="now-playing__dot"></span>

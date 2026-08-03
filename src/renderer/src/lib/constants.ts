@@ -51,3 +51,14 @@ export const DEFAULTS = {
   maxCrossfade: 10,
   maxClimates: 16,
 } as const
+
+export const AMBIENT_DEFAULTS = {
+  volume: 60,
+  minDelaySec: 10,
+  maxDelaySec: 30,
+  minDelayBound: 1,
+  maxDelayBound: 600,
+  maxLayers: 12,
+  /** Fade applied when a single layer is toggled, so loops don't click. */
+  toggleFadeSec: 0.4,
+} as const

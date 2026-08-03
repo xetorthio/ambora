@@ -241,6 +241,8 @@
       ['path', { d: 'M22 18l-4 4-4-4' }],
       ['path', { d: 'M16.8 13.6c.6 1 1.6 1.6 2.8 1.8H22' }],
     ],
+    ChevronUp: [['path', { d: 'm18 15-6-6-6 6' }]],
+    ChevronDown: [['path', { d: 'm6 9 6 6 6-6' }]],
     WifiOff: [
       ['path', { d: 'M12 20h.01' }],
       ['path', { d: 'M8.5 16.429a5 5 0 0 1 7 0' }],
@@ -297,9 +299,21 @@
       isFadingToSilence: false,
       isShuffled: false,
       fadeAnimations: [],
+      ambientRuntime: {},
     },
     connected: false,
   }
+
+  // ── Ambient Drawer State ──
+  var AMBIENT_OPEN_KEY = 'ambora.ambient.open'
+  var ambientOpen = false
+  // Signature of the rendered layer set. The panel is only rebuilt when this
+  // changes, so a state push can't yank a slider out from under a dragging thumb.
+  var ambientSignature = null
+  var ambientDraggingLayerId = null
+  var ambientVolumeTimers = {}
+  var ambientLastTriggered = {}
+  var ambientFlashTimers = {}
 
   // ── DOM Cache ──
   var dom = {}
@@ -317,6 +331,14 @@
     dom.volumeSlider = document.getElementById('volume-slider')
     dom.disconnectedOverlay = document.getElementById('disconnected-overlay')
     dom.wifiOffIcon = document.getElementById('wifi-off-icon')
+    dom.ambient = document.getElementById('ambient')
+    dom.ambientHandle = document.getElementById('ambient-handle')
+    dom.ambientPanel = document.getElementById('ambient-panel')
+    dom.ambientLayers = document.getElementById('ambient-layers')
+    dom.ambientShots = document.getElementById('ambient-shots')
+    dom.ambientIcon = document.getElementById('ambient-icon')
+    dom.ambientCount = document.getElementById('ambient-count')
+    dom.ambientChevron = document.getElementById('ambient-chevron')
   }
 
   // ── WebSocket ──
@@ -405,6 +427,7 @@
         } else {
           renderPlaybackState()
         }
+        renderAmbient()
         updateFadeAnimations()
         break
 
@@ -413,6 +436,7 @@
         renderCampaignName()
         renderClimateGrid()
         renderPlaybackState()
+        renderAmbient()
         break
     }
   }
@@ -423,6 +447,7 @@
     renderCampaignName()
     renderClimateGrid()
     renderPlaybackState()
+    renderAmbient()
     updateFadeAnimations()
   }
 
@@ -521,15 +546,17 @@
   function renderPlaybackState() {
     var pb = state.playback
     var hasClimate = !!pb.activeClimateId
+    var activeClimate = getActiveClimate()
+    var hasTracks = !!(activeClimate && activeClimate.tracks && activeClimate.tracks.length > 0)
 
     // Play/pause button
     dom.btnPlayPause.innerHTML = pb.isPlaying ? icon('Pause', 22) : icon('Play', 22)
     dom.btnPlayPause.disabled = !hasClimate
     dom.btnPlayPause.setAttribute('aria-label', pb.isPlaying ? 'Pause' : 'Play')
 
-    // Skip button
+    // Skip button — nothing to skip to in an ambience-only scene
     dom.btnSkip.innerHTML = icon('SkipForward', 20)
-    dom.btnSkip.disabled = !hasClimate
+    dom.btnSkip.disabled = !hasClimate || !hasTracks
 
     // Shuffle
     if (pb.isShuffled) {
@@ -546,11 +573,189 @@
 
     // Track title
     var track = getActiveTrack()
-    dom.trackTitle.textContent = track ? track.title : 'No track playing'
+    if (track) {
+      dom.trackTitle.textContent = track.title
+    } else if (hasClimate && !hasTracks) {
+      dom.trackTitle.textContent = 'Ambience only'
+    } else {
+      dom.trackTitle.textContent = 'No track playing'
+    }
 
     // Now playing dot color
+    dom.nowPlayingDot.style.background = activeClimate ? activeClimate.color : ''
+  }
+
+  // ── Ambient Drawer ──
+  function getAmbientLayers() {
     var climate = getActiveClimate()
-    dom.nowPlayingDot.style.background = climate ? climate.color : ''
+    if (!climate || !climate.ambientLayers) return []
+    return climate.ambientLayers.slice().sort(function (a, b) {
+      return a.order - b.order
+    })
+  }
+
+  /**
+   * Runtime state wins; the stored layer's own values are the fallback for the
+   * brief window before the desktop has pushed a runtime map for this climate.
+   */
+  function layerRuntime(layer) {
+    var runtime = state.playback.ambientRuntime || {}
+    return runtime[layer.id] || { enabled: layer.enabled, volume: layer.volume }
+  }
+
+  function signatureOf(layers) {
+    var parts = []
+    for (var i = 0; i < layers.length; i++) {
+      parts.push(layers[i].id + ':' + layers[i].name + ':' + layers[i].mode)
+    }
+    return parts.join('|')
+  }
+
+  function setAmbientOpen(open) {
+    ambientOpen = open
+    dom.ambientPanel.hidden = !open
+    dom.ambientHandle.setAttribute('aria-expanded', open ? 'true' : 'false')
+    dom.ambientChevron.innerHTML = icon(open ? 'ChevronDown' : 'ChevronUp', 16)
+    try {
+      localStorage.setItem(AMBIENT_OPEN_KEY, open ? '1' : '0')
+    } catch (e) {
+      // Private browsing or storage disabled — the drawer just won't persist.
+    }
+  }
+
+  function renderAmbient() {
+    var layers = getAmbientLayers()
+
+    if (layers.length === 0) {
+      dom.ambient.hidden = true
+      ambientSignature = null
+      dom.ambientLayers.innerHTML = ''
+      dom.ambientShots.innerHTML = ''
+      return
+    }
+
+    dom.ambient.hidden = false
+    // Meters only mean something while the scene is actually running.
+    dom.ambient.setAttribute('data-live', state.playback.isPlaying ? 'true' : 'false')
+
+    var signature = signatureOf(layers)
+    if (signature !== ambientSignature) {
+      ambientSignature = signature
+      buildAmbientPanel(layers)
+    }
+
+    updateAmbientValues(layers)
+    updateAmbientHandle(layers)
+  }
+
+  function buildAmbientPanel(layers) {
+    var climate = getActiveClimate()
+    var color = climate ? climate.color : ''
+
+    var layersHtml = ''
+    var shotsHtml = ''
+
+    for (var i = 0; i < layers.length; i++) {
+      var layer = layers[i]
+      if (layer.mode === 'oneshot') {
+        shotsHtml +=
+          '<button class="ambient-shot" data-layer-id="' +
+          layer.id +
+          '" style="--shot-color:' +
+          color +
+          '">' +
+          icon('Play', 16) +
+          '<span class="ambient-shot__label">' +
+          escapeHtml(layer.name) +
+          '</span>' +
+          '</button>'
+        continue
+      }
+
+      layersHtml +=
+        '<div class="ambient-layer" data-layer-id="' +
+        layer.id +
+        '" style="--layer-color:' +
+        color +
+        '">' +
+        '<button class="ambient-layer__toggle" role="switch" aria-checked="false" ' +
+        'aria-label="Toggle ' +
+        escapeHtml(layer.name) +
+        '"><span class="ambient-layer__dot"></span></button>' +
+        '<span class="ambient-layer__meter" aria-hidden="true">' +
+        '<span></span><span></span><span></span>' +
+        '</span>' +
+        '<span class="ambient-layer__name">' +
+        escapeHtml(layer.name) +
+        '</span>' +
+        '<input class="ambient-layer__volume" type="range" min="0" max="100" value="' +
+        layer.volume +
+        '" aria-label="' +
+        escapeHtml(layer.name) +
+        ' volume">' +
+        '</div>'
+    }
+
+    dom.ambientLayers.innerHTML = layersHtml
+    dom.ambientShots.innerHTML = shotsHtml
+    dom.ambientShots.hidden = shotsHtml === ''
+  }
+
+  function updateAmbientValues(layers) {
+    for (var i = 0; i < layers.length; i++) {
+      var layer = layers[i]
+      var runtime = layerRuntime(layer)
+
+      if (layer.mode === 'oneshot') {
+        var pad = dom.ambientShots.querySelector('[data-layer-id="' + layer.id + '"]')
+        if (pad) {
+          pad.setAttribute('data-enabled', runtime.enabled ? 'true' : 'false')
+        }
+        // A trigger from any client (this phone, another phone, the desktop)
+        // flashes the pad, so confirmation doesn't depend on hearing the room.
+        if (runtime.triggeredAt && ambientLastTriggered[layer.id] !== runtime.triggeredAt) {
+          ambientLastTriggered[layer.id] = runtime.triggeredAt
+          flashShot(layer.id)
+        }
+        continue
+      }
+
+      var row = dom.ambientLayers.querySelector('[data-layer-id="' + layer.id + '"]')
+      if (!row) continue
+
+      row.setAttribute('data-enabled', runtime.enabled ? 'true' : 'false')
+      row.setAttribute('data-sounding', runtime.sounding ? 'true' : 'false')
+      row
+        .querySelector('.ambient-layer__toggle')
+        .setAttribute('aria-checked', runtime.enabled ? 'true' : 'false')
+
+      if (ambientDraggingLayerId !== layer.id) {
+        row.querySelector('.ambient-layer__volume').value = runtime.volume
+      }
+    }
+  }
+
+  function updateAmbientHandle(layers) {
+    var on = 0
+    for (var i = 0; i < layers.length; i++) {
+      if (layers[i].mode !== 'oneshot' && layerRuntime(layers[i]).enabled) on++
+    }
+    var total = 0
+    for (var j = 0; j < layers.length; j++) {
+      if (layers[j].mode !== 'oneshot') total++
+    }
+    dom.ambientCount.textContent = total === 0 ? '' : '· ' + on + ' on'
+  }
+
+  function flashShot(layerId) {
+    var pad = dom.ambientShots.querySelector('[data-layer-id="' + layerId + '"]')
+    if (!pad) return
+    pad.classList.add('firing')
+    if (ambientFlashTimers[layerId]) clearTimeout(ambientFlashTimers[layerId])
+    ambientFlashTimers[layerId] = setTimeout(function () {
+      pad.classList.remove('firing')
+      ambientFlashTimers[layerId] = null
+    }, 400)
   }
 
   function updateActiveClimateCard() {
@@ -728,6 +933,87 @@
       send({ type: 'toggle-shuffle' })
     })
 
+    // Ambient drawer handle
+    dom.ambientHandle.addEventListener('click', function () {
+      setAmbientOpen(!ambientOpen)
+    })
+
+    // Layer toggles — event delegation
+    dom.ambientLayers.addEventListener('click', function (e) {
+      var toggle = e.target.closest('.ambient-layer__toggle')
+      if (!toggle) return
+      var row = toggle.closest('.ambient-layer')
+      var layerId = row && row.getAttribute('data-layer-id')
+      if (!layerId) return
+
+      var enabled = toggle.getAttribute('aria-checked') !== 'true'
+      // Optimistic: the desktop echoes the authoritative value right back, but
+      // the toggle must not feel laggy over WiFi.
+      toggle.setAttribute('aria-checked', enabled ? 'true' : 'false')
+      row.setAttribute('data-enabled', enabled ? 'true' : 'false')
+      if (navigator.vibrate) navigator.vibrate(20)
+
+      send({ type: 'set-layer-enabled', payload: { layerId: layerId, enabled: enabled } })
+    })
+
+    // Layer volume — instant visual, throttled send (one timer per layer)
+    dom.ambientLayers.addEventListener('input', function (e) {
+      var slider = e.target
+      if (!slider.classList.contains('ambient-layer__volume')) return
+      var row = slider.closest('.ambient-layer')
+      var layerId = row && row.getAttribute('data-layer-id')
+      if (!layerId) return
+
+      if (!ambientVolumeTimers[layerId]) {
+        ambientVolumeTimers[layerId] = setTimeout(function () {
+          ambientVolumeTimers[layerId] = null
+          send({
+            type: 'set-layer-volume',
+            payload: { layerId: layerId, volume: parseInt(slider.value, 10) },
+          })
+        }, 100)
+      }
+    })
+
+    dom.ambientLayers.addEventListener('change', function (e) {
+      var slider = e.target
+      if (!slider.classList.contains('ambient-layer__volume')) return
+      var row = slider.closest('.ambient-layer')
+      var layerId = row && row.getAttribute('data-layer-id')
+      if (!layerId) return
+      send({
+        type: 'set-layer-volume',
+        payload: { layerId: layerId, volume: parseInt(slider.value, 10) },
+      })
+    })
+
+    // Drag guard, so an incoming state push can't fight the thumb
+    dom.ambientLayers.addEventListener('pointerdown', function (e) {
+      if (!e.target.classList.contains('ambient-layer__volume')) return
+      var row = e.target.closest('.ambient-layer')
+      ambientDraggingLayerId = row && row.getAttribute('data-layer-id')
+    })
+
+    // On window, not the row: a drag that ends outside the slider must still
+    // release the guard, or that layer's volume stops tracking the desktop.
+    function endAmbientDrag() {
+      ambientDraggingLayerId = null
+    }
+    window.addEventListener('pointerup', endAmbientDrag)
+    window.addEventListener('pointercancel', endAmbientDrag)
+
+    // One-shot pads
+    dom.ambientShots.addEventListener('click', function (e) {
+      var pad = e.target.closest('.ambient-shot')
+      if (!pad) return
+      var layerId = pad.getAttribute('data-layer-id')
+      if (!layerId) return
+
+      flashShot(layerId)
+      if (navigator.vibrate) navigator.vibrate(30)
+      send({ type: 'trigger-layer', payload: { layerId: layerId } })
+    })
+
     // Mute toggle
     dom.btnMute.addEventListener('click', function () {
       if (state.playback.volume > 0) {
@@ -756,6 +1042,17 @@
     dom.btnShuffle.innerHTML = icon('Shuffle', 20)
     dom.btnMute.innerHTML = icon('Volume2', 20)
     dom.wifiOffIcon.innerHTML = icon('WifiOff', 48)
+    dom.ambientIcon.innerHTML = icon('Waves', 16)
+
+    // The drawer stays where the GM left it, so one-shot pads remain one tap
+    // away across a whole scene.
+    var storedOpen = null
+    try {
+      storedOpen = localStorage.getItem(AMBIENT_OPEN_KEY)
+    } catch (e) {
+      // Storage unavailable — fall back to collapsed.
+    }
+    setAmbientOpen(storedOpen === '1')
 
     bindEvents()
     renderAll()

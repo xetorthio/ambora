@@ -17,8 +17,10 @@ import { Slider } from '@/components/ui/slider'
 import { Separator } from '@/components/ui/separator'
 import { ColorPicker } from '@/components/ColorPicker'
 import { IconPicker } from '@/components/IconPicker'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { TrackList } from '@/components/TrackList'
 import { AddTrackDialog } from '@/components/AddTrackDialog'
+import { AmbientLayerList } from '@/components/AmbientLayerList'
 import { ACCEPTED_AUDIO_EXTENSIONS } from '@/lib/constants'
 import { ICON_MAP, type ClimateIconName } from '@/lib/iconMap'
 import { DEFAULTS } from '@/lib/constants'
@@ -28,21 +30,22 @@ import { useAudioStore } from '@/store/audioStore'
 import { useDiagnosticsStore } from '@/store/diagnosticsStore'
 import { useAudioEngine } from '@/hooks/useAudioEngine'
 import { probeLocalTrack } from '@/audio/probeTrack'
-import type { Climate, Track } from '@/lib/types'
+import type { Campaign, Climate, Track } from '@/lib/types'
 import { toast } from 'sonner'
 import { getLocalFileDuration } from '@/lib/utils'
 
 interface ClimateDetailProps {
   climate: Climate
-  campaignId: string
+  campaign: Campaign
   onClose: () => void
 }
 
 export function ClimateDetail({
   climate,
-  campaignId,
+  campaign,
   onClose,
 }: ClimateDetailProps): React.JSX.Element {
+  const campaignId = campaign.id
   const { updateClimate, deleteClimate, addTrack, removeTrack } = useCampaignStore()
   const audioEngine = useAudioEngine()
   const [addTrackOpen, setAddTrackOpen] = useState(false)
@@ -63,15 +66,22 @@ export function ClimateDetail({
   })
 
   const Icon = ICON_MAP[climate.icon as ClimateIconName]
+  const ambientLayerCount = (climate.ambientLayers ?? []).length
 
   // Proactively probe local files for decodability so unplayable tracks are
   // flagged before playback. Runs on open and whenever the track list changes
   // (adding a file re-runs this and probes just the new one). Sequential to keep
   // it gentle, and deduped via the store's `probed` set.
   useEffect(() => {
-    const toProbe = climate.tracks.filter(
-      (t) =>
-        t.source === 'local' && t.localFilePath && !useDiagnosticsStore.getState().hasProbed(t.id),
+    const localTracks = climate.tracks
+      .filter((t) => t.source === 'local' && t.localFilePath)
+      .map((t) => ({ id: t.id, localFilePath: t.localFilePath! }))
+    // Ambient clips are always local files, so they get the same up-front check.
+    const ambientClips = (climate.ambientLayers ?? []).flatMap((layer) =>
+      layer.clips.map((c) => ({ id: c.id, localFilePath: c.localFilePath })),
+    )
+    const toProbe = [...localTracks, ...ambientClips].filter(
+      (t) => !useDiagnosticsStore.getState().hasProbed(t.id),
     )
     if (toProbe.length === 0) return
 
@@ -81,7 +91,7 @@ export function ClimateDetail({
         if (cancelled) return
         const store = useDiagnosticsStore.getState()
         store.markProbed(track.id)
-        const { ok, reason } = await probeLocalTrack(track.localFilePath!)
+        const { ok, reason } = await probeLocalTrack(track.localFilePath)
         if (cancelled) return
         if (!ok) {
           store.setUnplayable(track.id, {
@@ -99,7 +109,7 @@ export function ClimateDetail({
     return () => {
       cancelled = true
     }
-  }, [climate.id, climate.tracks])
+  }, [climate.id, climate.tracks, climate.ambientLayers])
 
   function handleDeleteClimate(): void {
     deleteClimate(campaignId, climate.id)
@@ -276,41 +286,53 @@ export function ClimateDetail({
 
         <Separator className="my-4 bg-border-subtle" />
 
-        {/* Track section */}
-        <div>
-          <div className="mb-2 flex items-center justify-between">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.06em] text-text-tertiary">
-              Tracks ({climate.tracks.length})
-            </p>
-            <Button variant="ghost" size="xs" onClick={() => setAddTrackOpen(true)}>
-              <Plus className="size-3" />
-              Add Track
-            </Button>
-          </div>
-          <div
-            onDragOver={handleDragOver}
-            onDragLeave={handleDragLeave}
-            onDrop={handleDrop}
-            className="relative"
-          >
-            {isDragOver && (
-              <div className="absolute inset-0 z-10 flex items-center justify-center rounded-md border-2 border-dashed border-accent bg-accent-muted/20">
-                <div className="flex flex-col items-center gap-1">
-                  <Upload className="size-5 text-accent" />
-                  <span className="text-[12px] font-medium text-accent">
-                    Drop audio files to add tracks
-                  </span>
+        {/* Music and ambient are separate tabs so a climate with many tracks and
+            many layers stays readable. */}
+        <Tabs defaultValue="music">
+          <TabsList>
+            <TabsTrigger value="music">Music ({climate.tracks.length})</TabsTrigger>
+            <TabsTrigger value="ambient">Ambient ({ambientLayerCount})</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="music" className="mt-4">
+            <div className="mb-2 flex items-center justify-between">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.06em] text-text-tertiary">
+                Tracks ({climate.tracks.length})
+              </p>
+              <Button variant="ghost" size="xs" onClick={() => setAddTrackOpen(true)}>
+                <Plus className="size-3" />
+                Add Track
+              </Button>
+            </div>
+            <div
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+              onDrop={handleDrop}
+              className="relative"
+            >
+              {isDragOver && (
+                <div className="absolute inset-0 z-10 flex items-center justify-center rounded-md border-2 border-dashed border-accent bg-accent-muted/20">
+                  <div className="flex flex-col items-center gap-1">
+                    <Upload className="size-5 text-accent" />
+                    <span className="text-[12px] font-medium text-accent">
+                      Drop audio files to add tracks
+                    </span>
+                  </div>
                 </div>
-              </div>
-            )}
-            <TrackList
-              tracks={climate.tracks}
-              onDeleteTrack={handleDeleteTrack}
-              climateColor={climate.color}
-              onPlayTrack={handlePlayTrack}
-            />
-          </div>
-        </div>
+              )}
+              <TrackList
+                tracks={climate.tracks}
+                onDeleteTrack={handleDeleteTrack}
+                climateColor={climate.color}
+                onPlayTrack={handlePlayTrack}
+              />
+            </div>
+          </TabsContent>
+
+          <TabsContent value="ambient" className="mt-4">
+            <AmbientLayerList campaign={campaign} climate={climate} />
+          </TabsContent>
+        </Tabs>
       </div>
 
       <AddTrackDialog

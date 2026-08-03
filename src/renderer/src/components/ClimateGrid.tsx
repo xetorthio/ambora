@@ -74,7 +74,7 @@ export function ClimateGrid({ campaign }: ClimateGridProps): React.JSX.Element {
     return (
       <ClimateDetail
         climate={selectedClimate}
-        campaignId={campaign.id}
+        campaign={campaign}
         onClose={() => setSelectedClimateId(null)}
       />
     )

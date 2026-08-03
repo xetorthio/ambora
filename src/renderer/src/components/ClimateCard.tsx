@@ -48,6 +48,9 @@ export function ClimateCard({
     (s) => climate.tracks.filter((t) => s.unplayable[t.id]).length,
   )
   const [isDragOver, setIsDragOver] = useState(false)
+  const ambientLayerCount = (climate.ambientLayers ?? []).length
+  // A climate can be ambience only — wind and birds with no score.
+  const canPlay = climate.tracks.length > 0 || ambientLayerCount > 0
 
   function handleDragOver(e: React.DragEvent): void {
     e.preventDefault()
@@ -138,6 +141,7 @@ export function ClimateCard({
         <div className="flex items-center gap-2">
           <span className="text-[11px] text-text-tertiary">
             {climate.tracks.length} {climate.tracks.length === 1 ? 'track' : 'tracks'}
+            {ambientLayerCount > 0 && ` · ${ambientLayerCount} ambient`}
           </span>
           {unplayableCount > 0 && (
             <span
@@ -149,7 +153,7 @@ export function ClimateCard({
             </span>
           )}
         </div>
-        {climate.tracks.length > 0 && (
+        {canPlay && (
           <span
             role="button"
             tabIndex={0}
