@@ -3,9 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Ambora — Atmospheric Music for Your Tabletop RPG Sessions</title>
-  <meta name="description" content="Control your D&D session music from your phone. One-tap climate switching with smooth crossfades. Free, open-source desktop app for DMs.">
-  <meta name="keywords" content="D&D music, tabletop RPG music, DM tools, session music, ambient music player, TTRPG, dungeon master, campaign music, RPG soundboard">
+  <title>Ambora — Music &amp; Ambient Sound for Your Tabletop RPG Sessions</title>
+  <meta name="description" content="Control your D&D session music and ambient sound from your phone. One-tap scene switching with smooth crossfades, plus layered ambience — wind, birds, a raven when you tap it. Free, open-source desktop app for DMs.">
+  <meta name="keywords" content="D&D music, tabletop RPG music, ambient sound layers, DM tools, session music, ambient music player, TTRPG, dungeon master, campaign music, RPG soundboard, ambient soundscape">
   <meta name="author" content="Ambora">
   <meta name="robots" content="index, follow">
   <link rel="canonical" href="https://ambora.app">
@@ -15,8 +15,8 @@
 
   <!-- Open Graph -->
   <meta property="og:type" content="website">
-  <meta property="og:title" content="Ambora — Atmospheric Music for Your Tabletop RPG Sessions">
-  <meta property="og:description" content="Control your D&D session music from your phone. One-tap climate switching with smooth crossfades. Free & open source.">
+  <meta property="og:title" content="Ambora — Music & Ambient Sound for Your Tabletop RPG Sessions">
+  <meta property="og:description" content="Control your D&D session music and ambient sound from your phone. One-tap scene switching, smooth crossfades, and layered ambience. Free & open source.">
   <meta property="og:url" content="https://ambora.app">
   <meta property="og:site_name" content="Ambora">
   <meta property="og:image" content="https://ambora.app/og-image.png">
@@ -26,8 +26,8 @@
 
   <!-- Twitter Card -->
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="Ambora — Atmospheric Music for Your Tabletop RPG Sessions">
-  <meta name="twitter:description" content="Control your D&D session music from your phone. One-tap climate switching with smooth crossfades.">
+  <meta name="twitter:title" content="Ambora — Music & Ambient Sound for Your Tabletop RPG Sessions">
+  <meta name="twitter:description" content="Control your D&D session music and ambient sound from your phone. One-tap scene switching, smooth crossfades, and layered ambience.">
   <meta name="twitter:image" content="https://ambora.app/og-image.png">
 
   <!-- Structured Data -->
@@ -36,7 +36,7 @@
     "@context": "https://schema.org",
     "@type": "SoftwareApplication",
     "name": "Ambora",
-    "description": "Desktop app with phone remote control for managing atmospheric music during tabletop RPG sessions.",
+    "description": "Desktop app with phone remote control for managing atmospheric music and layered ambient sound during tabletop RPG sessions.",
     "applicationCategory": "MultimediaApplication",
     "operatingSystem": "macOS, Windows, Linux",
     "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
@@ -498,6 +498,22 @@
       align-items: center;
     }
 
+    /* Collapsed ambient drawer, as it appears on the real remote */
+    .phone-ambient {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      margin-top: 10px;
+      padding: 8px 12px;
+      border-radius: 10px;
+      background: var(--surface-1);
+      font-size: 10px;
+      color: var(--text-secondary);
+    }
+
+    .phone-ambient .count { flex: 1; color: var(--text-muted); }
+    .phone-ambient .chev { color: var(--text-muted); }
+
     .phone-now-playing .track { font-size: 11px; color: var(--text-secondary); }
     .phone-now-playing .skip { font-size: 14px; color: var(--text-muted); cursor: pointer; }
 
@@ -790,6 +806,93 @@
       gap: 8px;
     }
 
+    /* Ambient layer list mock */
+    .ambient-demo {
+      order: 2;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .ambient-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      border-radius: 10px;
+      background: var(--surface-2);
+      border: 1px solid var(--border-subtle);
+      font-size: 11px;
+    }
+
+    .ambient-dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      border: 2px solid var(--text-muted);
+    }
+
+    .ambient-dot.on { border-color: transparent; }
+
+    .ambient-name {
+      flex: 1;
+      font-weight: 600;
+      color: var(--text);
+      white-space: nowrap;
+    }
+
+    .ambient-row.off .ambient-name { color: var(--text-muted); }
+
+    .ambient-mode {
+      color: var(--text-muted);
+      font-size: 10px;
+      white-space: nowrap;
+    }
+
+    .ambient-meter {
+      display: flex;
+      align-items: flex-end;
+      gap: 2px;
+      width: 14px;
+      height: 12px;
+      flex-shrink: 0;
+    }
+
+    .ambient-meter i {
+      width: 2px;
+      height: 3px;
+      border-radius: 1px;
+      background: var(--text-muted);
+      transform-origin: bottom;
+    }
+
+    .ambient-row.live .ambient-meter i {
+      height: 10px;
+      animation: ambient-pulse 1.1s ease-in-out infinite;
+    }
+
+    .ambient-row.live .ambient-meter i:nth-child(2) { height: 12px; animation-delay: 160ms; }
+    .ambient-row.live .ambient-meter i:nth-child(3) { animation-delay: 320ms; }
+
+    @keyframes ambient-pulse {
+      0%, 100% { opacity: 0.35; transform: scaleY(0.4); }
+      50%      { opacity: 1;    transform: scaleY(1); }
+    }
+
+    .ambient-pad {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 18px;
+      height: 18px;
+      border-radius: 5px;
+      flex-shrink: 0;
+      font-size: 8px;
+      color: var(--bg);
+      background: var(--accent);
+    }
+
     .climate-chip {
       border-radius: 10px;
       padding: 12px 10px;
@@ -1019,6 +1122,7 @@
       .phone-card.active { animation: none; }
       .hero-badge .dot { animation: none; opacity: 1; }
       .logomark::before { animation: none; }
+      .ambient-row.live .ambient-meter i { animation: none; opacity: 1; }
     }
   </style>
 </head>
@@ -1065,7 +1169,7 @@
           Free &amp; Open Source
         </div>
         <h1>Set the mood.<br><span class="gradient">From your phone.</span></h1>
-        <p class="hero-subtitle">Ambora is a desktop app that lets you manage and switch atmospheric music during tabletop RPG sessions — controlled entirely from your phone with one tap.</p>
+        <p class="hero-subtitle">Ambora is a desktop app for the music <em>and</em> the ambience of your tabletop RPG sessions. Switch scenes with a crossfade, layer wind and birdsong underneath, and trigger a raven when your players get comfortable — all from your phone, one tap at a time.</p>
         <div class="hero-actions">
           <a href="#download" class="btn btn-primary">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
@@ -1149,6 +1253,12 @@
                 <span class="phone-card-name">Mystery</span>
               </div>
             </div>
+            <div class="phone-ambient">
+              <span>≈</span>
+              <span>Ambient</span>
+              <span class="count">· 3 on</span>
+              <span class="chev">⌃</span>
+            </div>
             <div class="phone-now-playing">
               <span class="track">🎵 Epic Battle Theme — Hanz...</span>
               <span class="skip">⏭</span>
@@ -1205,7 +1315,7 @@
         <div class="step reveal reveal-delay-1">
           <div class="step-number">01</div>
           <div class="step-title">Build your soundscape</div>
-          <p class="step-desc">Create a campaign — or start with the <span class="step-highlight">15 pre-built RPG moods</span>. Add climates like combat, tavern, forest, and mystery, each with its own playlist of YouTube or local tracks.</p>
+          <p class="step-desc">Create a campaign — or start with the <span class="step-highlight">15 pre-built RPG moods</span>. Add climates like combat, tavern, forest, and mystery, each with its own playlist of YouTube or local tracks, plus optional <span class="step-highlight">ambient layers</span> underneath.</p>
         </div>
         <div class="step reveal reveal-delay-2">
           <div class="step-number">02</div>
@@ -1215,7 +1325,7 @@
         <div class="step reveal reveal-delay-3">
           <div class="step-number">03</div>
           <div class="step-title">Tap to set the mood</div>
-          <p class="step-desc">One tap switches climates with a smooth <span class="step-highlight">crossfade</span>. Your players hear the tavern chatter melt into forest ambience. No gap. No break. Pure immersion.</p>
+          <p class="step-desc">One tap switches climates with a smooth <span class="step-highlight">crossfade</span> — music and ambience together. Your players hear the tavern chatter melt into forest wind. Then you tap <span class="step-highlight">Raven</span>, and nobody knows why they're nervous.</p>
         </div>
       </div>
     </div>
@@ -1227,7 +1337,7 @@
       <div class="reveal">
         <div class="section-label">Features</div>
         <div class="section-title">Everything a DM needs. Nothing more.</div>
-        <p class="section-subtitle">Ambora focuses on doing one thing exceptionally well — letting you switch musical atmospheres without breaking your flow.</p>
+        <p class="section-subtitle">Ambora focuses on doing one thing exceptionally well — letting you shape the sound of a scene without breaking your flow.</p>
       </div>
       <div class="features-grid">
         <div class="feature-card wide reveal">
@@ -1264,10 +1374,43 @@
           <p class="feature-desc">Dual-channel audio engine with configurable crossfade (1–10 seconds). Old music fades out while new music fades in. No gaps, no silence.</p>
         </div>
 
+        <div class="feature-card wide reveal reveal-delay-1">
+          <div class="feature-content">
+            <div class="feature-icon" style="background: rgba(33,145,127,0.12);">🌬️</div>
+            <div class="feature-title">Ambient sound layers</div>
+            <p class="feature-desc">A forest isn't one looping file. Stack layers under the music: wind looping continuously, birds every 8&ndash;20 seconds, a branch cracking every half minute, and a raven only when you tap it. Each layer has its own volume, and random layers never overlap themselves — the next delay starts when the last clip ends.</p>
+          </div>
+          <div class="ambient-demo">
+            <div class="ambient-row live">
+              <span class="ambient-dot on" style="background: var(--cobalt);"></span>
+              <span class="ambient-name">Wind</span>
+              <span class="ambient-mode">Loop</span>
+              <span class="ambient-meter"><i></i><i></i><i></i></span>
+            </div>
+            <div class="ambient-row live">
+              <span class="ambient-dot on" style="background: var(--emerald);"></span>
+              <span class="ambient-name">Birds</span>
+              <span class="ambient-mode">Random 8&ndash;20s</span>
+              <span class="ambient-meter"><i></i><i></i><i></i></span>
+            </div>
+            <div class="ambient-row off">
+              <span class="ambient-dot"></span>
+              <span class="ambient-name">Branch cracks</span>
+              <span class="ambient-mode">Random 30&ndash;90s</span>
+              <span class="ambient-meter"><i></i><i></i><i></i></span>
+            </div>
+            <div class="ambient-row">
+              <span class="ambient-pad">▶</span>
+              <span class="ambient-name">Raven</span>
+              <span class="ambient-mode">One-shot</span>
+            </div>
+          </div>
+        </div>
+
         <div class="feature-card reveal reveal-delay-1">
           <div class="feature-icon" style="background: rgba(45,154,93,0.12);">📱</div>
           <div class="feature-title">Phone remote</div>
-          <p class="feature-desc">Your phone becomes the remote via local WiFi. No app to install — just scan a QR code. Works on any phone with a browser.</p>
+          <p class="feature-desc">Your phone becomes the remote via local WiFi. No app to install — just scan a QR code. Switch scenes, ride the volume, toggle ambient layers, and fire one-shots from big tap-friendly pads.</p>
         </div>
 
         <div class="feature-card reveal reveal-delay-2">
@@ -1279,7 +1422,7 @@
         <div class="feature-card reveal reveal-delay-2">
           <div class="feature-icon" style="background: rgba(220,53,69,0.12);">🎚️</div>
           <div class="feature-title">Volume normalization</div>
-          <p class="feature-desc">LUFS-based auto-leveling keeps every track at the same perceived volume. YouTube AGC handling included — no more jarring level jumps.</p>
+          <p class="feature-desc">LUFS-based auto-leveling analyses your local tracks and holds them all at the same perceived loudness — no more diving for the volume knob between songs.</p>
         </div>
 
         <div class="feature-card reveal reveal-delay-2">
@@ -1316,6 +1459,12 @@
           <div class="feature-icon" style="background: rgba(139,92,246,0.12);">🔀</div>
           <div class="feature-title">Shuffle mode</div>
           <p class="feature-desc">Shuffle tracks within a climate so your playlist never feels predictable. Toggle per climate for variety across long sessions.</p>
+        </div>
+
+        <div class="feature-card reveal reveal-delay-4">
+          <div class="feature-icon" style="background: rgba(94,194,105,0.12);">🛡️</div>
+          <div class="feature-title">Signed &amp; notarized on macOS</div>
+          <p class="feature-desc">macOS builds are signed with an Apple Developer ID and notarized by Apple, so Ambora opens with a double-click — no &ldquo;unidentified developer&rdquo; warning, no right-click workaround. And it asks for no permissions it doesn&rsquo;t need.</p>
         </div>
       </div>
     </div>
@@ -1369,9 +1518,10 @@
 
 <span class="comment"># Or download a pre-built installer</span>
 <span class="comment"># from the GitHub Releases page</span>
-<span class="comment"># → macOS (.dmg)</span>
+<span class="comment"># → macOS  Apple Silicon + Intel (.dmg)</span>
+<span class="comment">#          signed &amp; notarized by Apple</span>
 <span class="comment"># → Windows (.exe)</span>
-<span class="comment"># → Linux (.AppImage)</span></pre>
+<span class="comment"># → Linux  (.AppImage, .deb)</span></pre>
         </div>
       </div>
     </div>
@@ -1382,8 +1532,8 @@
     <div class="container">
       <div class="reveal">
         <div class="section-label">Get Started</div>
-        <div class="section-title">Your next session deserves<br>better music</div>
-        <p class="section-subtitle">Download Ambora for free, set up your climates in 5 minutes, and run your most immersive session yet.</p>
+        <div class="section-title">Your next session deserves<br>better sound</div>
+        <p class="section-subtitle">Download Ambora for free, set up your climates in 5 minutes, and run your most immersive session yet. macOS builds are signed and notarized by Apple, for both Apple Silicon and Intel.</p>
         <div class="cta-actions">
           <a href="https://github.com/xetorthio/ambora/releases/latest" class="btn btn-primary" target="_blank" rel="noopener noreferrer">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>

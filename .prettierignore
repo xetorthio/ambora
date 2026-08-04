@@ -3,3 +3,7 @@ dist
 node_modules
 package-lock.json
 src/renderer/src/components/ui
+
+# Hand-authored standalone landing page: inline <style>, deliberate SVG line
+# breaks. Prettier rewrites all ~1400 lines and buries real edits in churn.
+website
