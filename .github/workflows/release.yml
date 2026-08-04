@@ -21,18 +21,45 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   build:
+    name: build (${{ matrix.name }})
     needs: create-release
     strategy:
+      # One platform failing shouldn't cancel the others — a macOS notarization
+      # problem doesn't invalidate the Windows or Linux artifacts.
+      fail-fast: false
       matrix:
         include:
+          # The two macOS architectures build as separate jobs so their
+          # notarization submissions queue at Apple in parallel. Building both in
+          # one job would serialise them, and the wait is measured in hours.
+          # macos-latest is Apple Silicon; electron-builder cross-builds the x64
+          # app and signs it there just as happily.
           - os: macos-latest
+            name: macos-arm64
             script: dist:mac
+            args: --arm64
+            timeout: 240
+          - os: macos-latest
+            name: macos-x64
+            script: dist:mac
+            args: --x64
+            timeout: 240
           - os: windows-latest
+            name: windows
             script: dist:win
+            args: ''
+            timeout: 30
           - os: ubuntu-latest
+            name: linux
             script: dist:linux
+            args: ''
+            timeout: 30
 
     runs-on: ${{ matrix.os }}
+    # Bounds a stuck job well below GitHub's 6h default. Generous on macOS
+    # because notarization genuinely waits on Apple — v0.5.0's submission took
+    # 2h28m, so anything tighter would kill legitimate releases.
+    timeout-minutes: ${{ matrix.timeout }}
 
     steps:
       - uses: actions/checkout@v4
@@ -89,7 +116,7 @@ jobs:
       # electron-builder try to sign the installer with a Developer ID cert.
       # Missing secrets resolve to '', which electron-builder treats as absent —
       # the build then still succeeds, unsigned.
-      - run: npm run ${{ matrix.script }} -- --publish never
+      - run: npm run ${{ matrix.script }} -- --publish never ${{ matrix.args }}
         env:
           CSC_LINK: ${{ matrix.os == 'macos-latest' && secrets.CSC_LINK || '' }}
           CSC_KEY_PASSWORD: ${{ matrix.os == 'macos-latest' && secrets.CSC_KEY_PASSWORD || '' }}

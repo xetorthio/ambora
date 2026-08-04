@@ -26,6 +26,10 @@ nsis:
   uninstallDisplayName: ${productName}
   createDesktopShortcut: always
 mac:
+  # arm64 and x64 are built separately, so every macOS artifact carries its arch.
+  # Without ${arch} the two builds would produce identically named files and the
+  # second upload would silently clobber the first.
+  artifactName: ${productName}-${version}-${arch}-mac.${ext}
   hardenedRuntime: true
   entitlements: build/entitlements.mac.plist
   entitlementsInherit: build/entitlements.mac.plist
@@ -40,7 +44,7 @@ mac:
   # testing on the build machine.
   notarize: true
 dmg:
-  artifactName: ${name}-${version}.${ext}
+  artifactName: ${name}-${version}-${arch}.${ext}
 linux:
   target:
     - AppImage

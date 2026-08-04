@@ -111,11 +111,43 @@ spctl --assess --type execute --verbose=4 /Applications/Ambora.app
 xcrun stapler validate /Applications/Ambora.app
 ```
 
+## macOS architectures
+
+Apple Silicon and Intel are built as **separate matrix jobs**, both on
+`macos-latest` — electron-builder cross-builds and signs the x64 app there
+happily. They are split so their notarization submissions queue at Apple in
+parallel; building both in one job serialises them, and the wait is measured in
+hours.
+
+Every macOS artifact therefore carries its architecture:
+
+```
+Ambora-<version>-arm64-mac.zip    ambora-<version>-arm64.dmg
+Ambora-<version>-x64-mac.zip      ambora-<version>-x64.dmg
+```
+
+Without `${arch}` in the artifact names the two jobs would emit identically named
+files and the second upload would silently clobber the first.
+
+## Timeouts
+
+Each build job has a `timeout-minutes`, bounding a stuck job well below GitHub's
+6-hour default. macOS gets 240 because notarization genuinely waits on Apple —
+the v0.5.0 submission took **2h28m**, so a tighter limit would kill legitimate
+releases. Windows and Linux get 30; both normally finish in about five minutes.
+
+`fail-fast: false` means one platform failing doesn't cancel the others.
+
 ## Known gaps
 
-- **macOS builds are arm64 only.** GitHub's `macos-latest` runner is Apple
-  Silicon and no explicit target arch is set, so Intel Macs are not covered.
-  Adding them means either a `universal` target or an extra matrix entry on
-  `macos-13`, at the cost of build time.
+- **`latest-mac.yml` is written by both macOS jobs**, so whichever uploads last
+  wins and the file describes only that architecture. Harmless today — nothing
+  consumes it, as the app has no auto-updater. It would need fixing before
+  adding `electron-updater`.
+- **The `.dmg` is not itself signed or stapled** — only the `.app` inside it is.
+  electron-builder notarizes the app, then packs the stapled app into the disk
+  image. Gatekeeper assesses the app on launch, so this is cosmetic, but a
+  quarantined DMG can show an extra prompt on mount and can't be verified
+  offline. Fixing it means a second notarization submission per release.
 - **Windows builds are unsigned**, so SmartScreen warns on first run. That needs
   a separate code-signing certificate.
