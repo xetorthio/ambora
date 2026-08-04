@@ -10,12 +10,21 @@
  * The AGC only attenuates (max gain = 1.0) since YouTube already normalizes to
  * roughly -14 LUFS. We just tame dynamic peaks.
  *
- * NOTE: This feature is disabled on Linux. There, getDisplayMedia() is serviced
- * by the xdg-desktop-portal ScreenCast interface, which pops a screen-capture
- * permission dialog — and on Wayland re-prompts on every stream (re)acquisition,
- * i.e. on every track switch (see issue #3). Audio plays fine without the AGC,
- * so we skip it entirely rather than drag the screen-capture APIs into the
- * audio path on that platform.
+ * NOTE: This feature is Windows-only, because Electron supports
+ * `audio: 'loopback'` only there. Elsewhere the capture returns a video-only
+ * stream, so the AGC gets no audio to measure and gives up — but not before the
+ * OS has prompted for screen recording:
+ *
+ * - macOS shows "Ambora is requesting to bypass the system private window picker
+ *   and directly access your screen and audio", an alarming prompt for a
+ *   capability the app then cannot use.
+ * - Linux routes getDisplayMedia() through the xdg-desktop-portal ScreenCast
+ *   interface, which on Wayland re-prompts on every stream (re)acquisition, i.e.
+ *   every track switch (issue #3).
+ *
+ * Audio plays fine without the AGC — YouTube already normalizes to roughly
+ * -14 LUFS, and this only tames peaks — so rather than ask for screen recording
+ * on platforms that cannot deliver the audio, we skip it entirely.
  */
 
 const TARGET_RMS = 0.08 // Approximate RMS corresponding to -14 LUFS
@@ -25,9 +34,10 @@ const ATTACK_COEFF = 0.05 // Fast attack for peaks (~10ms effective)
 const RELEASE_COEFF = 0.002 // Slow release (~500ms effective)
 const SILENCE_THRESHOLD = 0.001 // Below this RMS, don't adjust
 
-// The loopback capture behind the AGC triggers repeated screen-capture portal
-// prompts on Linux (issue #3), so the feature is unavailable there.
-const AGC_SUPPORTED = window.api.platform !== 'linux'
+// Electron's `audio: 'loopback'` is Windows-only. Everywhere else the capture
+// yields no audio track, so the AGC can't work — and asking for screen recording
+// to achieve nothing is the worst of both worlds.
+const AGC_SUPPORTED = window.api.platform === 'win32'
 
 export class YouTubeAGC {
   private stream: MediaStream | null = null

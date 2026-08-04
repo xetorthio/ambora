@@ -278,27 +278,29 @@ app.whenReady().then(async () => {
     })
   })
 
-  // Allow renderer to capture system audio via getDisplayMedia for YouTube AGC.
-  // On Linux this goes through the xdg-desktop-portal ScreenCast interface, which
-  // re-prompts for screen-capture permission on every stream acquisition (issue
-  // #3). The AGC is disabled on Linux in the renderer; deny here too so no stray
-  // request can ever surface a portal prompt.
-  session.defaultSession.setDisplayMediaRequestHandler(async (_request, callback) => {
-    if (process.platform === 'linux') {
-      callback({})
-      return
-    }
-    try {
-      const sources = await desktopCapturer.getSources({ types: ['screen'] })
-      if (sources.length === 0) {
+  // System-audio capture backs the YouTube AGC, and Electron supports
+  // `audio: 'loopback'` on Windows only. Registering this handler anywhere else
+  // would let the renderer trigger an OS screen-recording prompt for a capture
+  // that can never return an audio track — a scary permission dialog in exchange
+  // for nothing. With no handler registered, Electron denies getDisplayMedia
+  // outright, so the prompt cannot appear at all.
+  if (process.platform === 'win32') {
+    session.defaultSession.setDisplayMediaRequestHandler(async (_request, callback) => {
+      try {
+        const sources = await desktopCapturer.getSources({ types: ['screen'] })
+        if (sources.length === 0) {
+          callback({})
+          return
+        }
+        callback({ video: sources[0], audio: 'loopback' })
+      } catch (error) {
+        // Previously swallowed, which made a failure here look like a mystery
+        // "no video stream was provided" rejection further down.
+        console.error('[display-media] could not enumerate screen sources:', error)
         callback({})
-        return
       }
-      callback({ video: sources[0], audio: 'loopback' })
-    } catch {
-      callback({})
-    }
-  })
+    })
+  }
 
   registerIpcHandlers()
 

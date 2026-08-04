@@ -33,11 +33,22 @@ mac:
   hardenedRuntime: true
   entitlements: build/entitlements.mac.plist
   entitlementsInherit: build/entitlements.mac.plist
+  # NOTE: a MAP, not a list. Written as a YAML list this merges as an array and
+  # lands in Info.plist as bogus "0"/"1"/"length" keys with the descriptions
+  # buried inside — where macOS never reads them.
+  #
+  # Only what Ambora actually touches. Audio files are referenced by path, so
+  # macOS gates re-reading them from these folders after a restart. Everything
+  # set to null is a default Electron ships and Ambora never uses; electron-builder
+  # strips null-valued keys from the final Info.plist.
   extendInfo:
-    - NSCameraUsageDescription: Application requests access to the device's camera.
-    - NSMicrophoneUsageDescription: Application requests access to the device's microphone.
-    - NSDocumentsFolderUsageDescription: Application requests access to the user's Documents folder.
-    - NSDownloadsFolderUsageDescription: Application requests access to the user's Downloads folder.
+    NSDocumentsFolderUsageDescription: Ambora needs access to open audio files you added to a campaign from your Documents folder.
+    NSDownloadsFolderUsageDescription: Ambora needs access to open audio files you added to a campaign from your Downloads folder.
+    NSCameraUsageDescription: null
+    NSMicrophoneUsageDescription: null
+    NSAudioCaptureUsageDescription: null
+    NSBluetoothAlwaysUsageDescription: null
+    NSBluetoothPeripheralUsageDescription: null
   # Notarization runs only when the App Store Connect API key env vars are
   # present (APPLE_API_KEY / APPLE_API_KEY_ID / APPLE_API_ISSUER). Local builds
   # without them still produce a signed-but-unnotarized app, which is fine for
