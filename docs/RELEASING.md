@@ -31,6 +31,34 @@ They are scoped to the macOS runner in the workflow. `CSC_LINK` is _not_
 platform-specific in electron-builder, so passing it to the Windows runner would
 make it try to sign the installer with a macOS certificate.
 
+### The G2 intermediate
+
+Developer ID certificates issued by the **G2** sub-CA chain through an
+intermediate that ships with neither macOS nor electron-builder. Without it,
+`codesign` cannot build the chain and the identity is unusable — the symptom is:
+
+```
+$ security find-identity -v -p codesigning
+     0 valid identities found
+
+$ security find-identity -p codesigning      # without -v
+  1) ABC123... "Developer ID Application: … (TEAMID)"
+     1 identities found
+```
+
+That is, the identity exists but isn't _valid_. Note that `security verify-cert`
+is misleading here — it succeeds, because it fetches the missing intermediate
+over the network, which `codesign` does not do.
+
+Install it once on any machine that signs locally:
+
+```bash
+curl -fsSLO https://www.apple.com/certificateauthority/DeveloperIDG2CA.cer
+security import DeveloperIDG2CA.cer -k ~/Library/Keychains/login.keychain-db
+```
+
+The release workflow does the same on the macOS runner.
+
 ### Creating the certificate
 
 1. In Xcode: **Settings → Accounts → Manage Certificates → + → Developer ID

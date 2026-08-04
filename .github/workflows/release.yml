@@ -51,6 +51,20 @@ jobs:
         # tagging). Without it, `npm version` errors with "Version not changed".
         run: npm version "${GITHUB_REF_NAME#v}" --no-git-tag-version --allow-same-version
 
+      # Developer ID certificates issued by the G2 sub-CA chain through an
+      # intermediate that ships neither with macOS nor in electron-builder's
+      # bundled root_certs.keychain. Without it codesign can't build the chain,
+      # `security find-identity -v` reports zero valid identities, and signing is
+      # silently skipped. Harmless when the runner already has it.
+      - name: Install Apple Developer ID G2 intermediate
+        if: matrix.os == 'macos-latest'
+        shell: bash
+        run: |
+          cer="$RUNNER_TEMP/DeveloperIDG2CA.cer"
+          curl -fsSL -o "$cer" https://www.apple.com/certificateauthority/DeveloperIDG2CA.cer
+          security import "$cer" -k "$HOME/Library/Keychains/login.keychain-db" \
+            || echo "::notice::G2 intermediate already present or not importable; continuing"
+
       # The App Store Connect key must exist on disk: @electron/notarize reads
       # APPLE_API_KEY as a path, not as the key material.
       - name: Write App Store Connect API key
