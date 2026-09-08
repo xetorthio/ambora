@@ -199,10 +199,14 @@ export function useRemoteSync(): void {
               if (diagnostics.unplayable[sound.id]) {
                 const probe = await probeSoundboardTrack(sound.localFilePath)
                 if (!probe.ok) {
-                  diagnostics.setUnplayable(sound.id, {
-                    source: 'probe',
-                    reason: probe.reason ?? 'Audio file could not be read — locate it to play',
-                  })
+                  const reason = probe.reason ?? 'Audio file could not be read — locate it to play'
+                  diagnostics.setUnplayable(sound.id, { source: 'probe', reason })
+                  // A repeated failure deliberately does not re-broadcast to the
+                  // phone, so without this the GM taps a flagged pad and nothing
+                  // happens anywhere. The desktop is where the file lives and
+                  // where the relink flow is, so that is where it is reported —
+                  // the same toast the desktop click path shows.
+                  toast.error(reason)
                   return
                 }
                 diagnostics.clearUnplayable(sound.id)

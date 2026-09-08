@@ -40,28 +40,46 @@ describe('resultForOutcome', () => {
 
 describe('userFacingAudioFailure', () => {
   it('replaces raw missing-file transport errors with an actionable message', () => {
-    expect(userFacingAudioFailure('Failed to read file (HTTP 404)')).toBe(
+    expect(userFacingAudioFailure('Failed to read file (HTTP 404)', true)).toBe(
       'Audio file is missing — locate it to play',
     )
-    expect(userFacingAudioFailure('/music/rain.wav: No such file or directory')).toBe(
+    expect(userFacingAudioFailure('/music/rain.wav: No such file or directory', true)).toBe(
       'Audio file is missing — locate it to play',
     )
   })
 
+  it('does not name a relink flow the caller cannot offer', () => {
+    // Ambient clips have no locate affordance, so the instruction would be a
+    // dead end. The diagnosis stays; only the remedy is dropped. See #45.
+    expect(userFacingAudioFailure('Failed to read file (HTTP 404)', false)).toBe(
+      'Audio file is missing',
+    )
+    expect(userFacingAudioFailure(undefined, false)).toBe('Audio file could not be read')
+    expect(userFacingAudioFailure(undefined, true)).toBe(
+      'Audio file could not be read — locate or replace it to play',
+    )
+  })
+
+  it('keeps a permissions failure identical either way, since relinking will not fix it', () => {
+    const expected = 'Audio file cannot be accessed — check the drive or file permissions'
+    expect(userFacingAudioFailure('permission denied', true)).toBe(expected)
+    expect(userFacingAudioFailure('permission denied', false)).toBe(expected)
+  })
+
   it('keeps useful codec diagnostics intact', () => {
-    expect(userFacingAudioFailure('Unsupported audio codec: ac4')).toBe(
+    expect(userFacingAudioFailure('Unsupported audio codec: ac4', true)).toBe(
       'Unsupported audio codec: ac4',
     )
   })
 
   it('does not misreport an ffmpeg spawn failure as a missing audio file', () => {
     const reason = 'Could not probe audio file: spawn /app/ffmpeg ENOENT'
-    expect(userFacingAudioFailure(reason)).toBe(reason)
+    expect(userFacingAudioFailure(reason, true)).toBe(reason)
   })
 
   it('does not treat a generic not-found diagnostic as a missing audio file', () => {
     const reason = 'ffmpeg binary not found (tried: /app/ffmpeg)'
-    expect(userFacingAudioFailure(reason)).toBe(reason)
+    expect(userFacingAudioFailure(reason, true)).toBe(reason)
   })
 })
 

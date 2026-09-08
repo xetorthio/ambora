@@ -181,7 +181,13 @@ export function Soundboard({ campaign }: SoundboardProps): React.JSX.Element {
             source: 'probe',
             reason: reason ?? 'Audio file could not be read — locate it to play',
           })
-        } else if (diagnostics.unplayable[sound.id]?.source === 'probe') {
+          continue
+        }
+        // Re-read rather than reusing the snapshot taken before the await: a
+        // pad pressed mid-probe can record a 'playback' diagnostic in the
+        // meantime, and clearing on the stale value would discard it.
+        const current = useDiagnosticsStore.getState().unplayable[sound.id]
+        if (current?.source === 'probe') {
           diagnostics.clearUnplayable(sound.id)
         }
       }

@@ -40,7 +40,7 @@ Built on a neutral scale with a subtle cool undertone (hue ~260 in OKLCH). **Nev
 | `--accent-muted`   | `#7B93F520` | —                        | Accent at 12% opacity for subtle backgrounds |
 | `--danger`         | `#F07070`   | `oklch(0.680 0.140 20)`  | Delete actions, errors                       |
 | `--success`        | `#5EC269`   | `oklch(0.700 0.150 145)` | Connection status, confirmations             |
-| `--warning`        | `#F5A45D`   | —                        | Missing audio and non-blocking warnings      |
+| `--warning`        | `#F5A45D`   | `oklch(0.785 0.130 60)`  | Missing audio and non-blocking warnings      |
 
 ## Climate Card Color Palette (16 presets)
 
