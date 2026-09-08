@@ -1104,6 +1104,25 @@ export class AudioEngine {
     }
   }
 
+  /** Keep the active playback snapshot aligned with edits made in the Climate editor. */
+  syncClimate(climate: Climate): void {
+    if (this.currentClimate?.id !== climate.id) return
+
+    this.currentClimate = climate
+    const activeTrackId = useAudioStore.getState().activeTrackId
+    if (!activeTrackId) return
+
+    const activeIndex = this.sortedTracks(climate).findIndex((track) => track.id === activeTrackId)
+    if (activeIndex >= 0) {
+      this.currentTrackIndex = activeIndex
+    } else {
+      this.currentTrackIndex = Math.min(
+        this.currentTrackIndex,
+        Math.max(0, climate.tracks.length - 1),
+      )
+    }
+  }
+
   fadeToSilence(): void {
     if (this.engineState === 'ambient') {
       this.fadeAmbientOnlyToSilence()

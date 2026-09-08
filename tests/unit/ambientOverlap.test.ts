@@ -162,6 +162,61 @@ afterEach(() => {
 })
 
 describe('one voice per layer', () => {
+  it('stops a running audition when a real climate starts', async () => {
+    const engine = AmbientEngine.getInstance()
+    await engine.auditionLayer(layer())
+
+    expect(liveSources()).toHaveLength(1)
+    engine.startClimate(climate([]), 0)
+
+    expect(liveSources()).toHaveLength(0)
+    const { useAudioStore } = await import('../../src/renderer/src/store/audioStore')
+    expect(useAudioStore.getState().auditioningLayerId).toBeNull()
+  })
+
+  it('does not start an audition that finishes decoding after a climate starts', async () => {
+    let finishDecode: ((buffer: unknown) => void) | undefined
+    vi.spyOn(FakeAudioContext.prototype, 'decodeAudioData').mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          finishDecode = resolve
+        }),
+    )
+
+    const engine = AmbientEngine.getInstance()
+    const audition = engine.auditionLayer(layer())
+    await flush()
+    engine.startClimate(climate([]), 0)
+
+    finishDecode?.({ duration: 3 })
+    await audition
+
+    expect(startedSources).toHaveLength(0)
+    const { useAudioStore } = await import('../../src/renderer/src/store/audioStore')
+    expect(useAudioStore.getState().auditioningLayerId).toBeNull()
+  })
+
+  it('restarts a live layer when an edited clip points to a different file', async () => {
+    const engine = AmbientEngine.getInstance()
+    engine.startClimate(climate([layer({ mode: 'loop' })]), 0)
+    await flush()
+    const firstSource = liveSources()[0]
+
+    engine.syncClimate(
+      climate([
+        layer({
+          mode: 'loop',
+          clips: [{ id: 'clip-1', title: 'b.wav', localFilePath: '/sfx/b.wav', order: 0 }],
+        }),
+      ]),
+    )
+    await flush()
+
+    expect(firstSource.choked).toBe(true)
+    expect(startedSources).toHaveLength(2)
+    expect(liveSources()).toHaveLength(1)
+  })
+
   it('never has two clips playing at once in random mode', async () => {
     const engine = AmbientEngine.getInstance()
     engine.startClimate(climate([layer()]), 0)

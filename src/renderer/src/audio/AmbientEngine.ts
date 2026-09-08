@@ -82,7 +82,7 @@ interface Stack {
 const CHOKE_FADE_SEC = 0.06
 
 function structuralKeyOf(layer: AmbientLayer): string {
-  return [layer.mode, ...sortedClips(layer).map((c) => c.id)].join('|')
+  return [layer.mode, ...sortedClips(layer).map((c) => `${c.id}:${c.localFilePath}`)].join('|')
 }
 
 function sameRuntime(
@@ -131,6 +131,8 @@ export class AmbientEngine {
   private volumeUnsub: (() => void) | null = null
 
   private auditionSource: AudioBufferSourceNode | null = null
+  /** Invalidates audition requests that are still loading or decoding. */
+  private auditionRun = 0
   private onClipDuration: ((localFilePath: string, duration: number) => void) | null = null
 
   private static readonly MAX_PARALLEL_DECODES = 2
@@ -308,6 +310,9 @@ export class AmbientEngine {
   startClimate(climate: Climate, fadeSec: number): void {
     const layers = climate.ambientLayers ?? []
 
+    // A real scene always takes precedence over an editor preview, including a
+    // preview whose file is still loading and has not created a source yet.
+    this.stopAudition()
     this.retireStack(this.stack, fadeSec)
     this.stack = null
 
@@ -563,8 +568,11 @@ export class AmbientEngine {
     if (clips.length === 0) return
 
     const ctx = this.ensureGraph()
+    const run = this.auditionRun
+    useAudioStore.getState().setAuditioningLayerId(layer.id)
     const clip = clips[Math.floor(Math.random() * clips.length)]
     const buffer = await this.getBuffer(clip)
+    if (run !== this.auditionRun) return
     if (!buffer) {
       useAudioStore.getState().setAuditioningLayerId(null)
       return
@@ -588,11 +596,11 @@ export class AmbientEngine {
     })
 
     this.auditionSource = source
-    useAudioStore.getState().setAuditioningLayerId(layer.id)
     source.start()
   }
 
   stopAudition(): void {
+    this.auditionRun++
     const source = this.auditionSource
     this.auditionSource = null
     useAudioStore.getState().setAuditioningLayerId(null)

@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
 import { AmbientEngine } from '@/audio/AmbientEngine'
+import { AudioEngine } from '@/audio/AudioEngine'
 import { useAudioStore } from '@/store/audioStore'
 import { useCampaignStore } from '@/store/campaignStore'
 
@@ -26,6 +27,7 @@ export function useAmbientSync(): void {
       const climate = campaign.climates.find((c) => c.id === activeClimateId)
       if (climate) {
         AmbientEngine.getInstance().syncClimate(climate)
+        AudioEngine.getInstance().syncClimate(climate)
         return
       }
     }
