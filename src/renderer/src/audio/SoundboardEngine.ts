@@ -137,7 +137,7 @@ export class SoundboardEngine {
         this.pending.delete(sound.id)
       }
       const detail = error instanceof Error ? error.message : 'Could not decode audio file'
-      const reason = userFacingAudioFailure(detail)
+      const reason = userFacingAudioFailure(detail, true)
       useDiagnosticsStore.getState().setUnplayable(sound.id, { source: 'playback', reason })
       audioLog('soundboard', 'decode-failed', {
         trackId: sound.id,

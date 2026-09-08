@@ -17,10 +17,26 @@ export interface MediaErrorLike {
   message?: string
 }
 
-export function userFacingAudioFailure(reason?: string): string {
-  if (!reason) return 'Audio file could not be read — locate or replace it to play'
+/**
+ * Turn a raw decode or probe failure into something a GM can act on.
+ *
+ * `canRelink` is the difference between the two callers. A soundboard pad has a
+ * locate-the-file flow (`relinkSoundboardSound`), so naming it is a real
+ * instruction. An ambient clip has none — the clip lives inside an AmbientLayer
+ * rather than on the campaign — and telling someone to locate a file when
+ * nothing in the UI lets them is worse than only saying what went wrong. See
+ * #45; when ambient clips gain a relink affordance this argument goes away.
+ */
+export function userFacingAudioFailure(reason: string | undefined, canRelink: boolean): string {
+  const locate = canRelink ? ' — locate it to play' : ''
+
+  if (!reason) {
+    return canRelink
+      ? 'Audio file could not be read — locate or replace it to play'
+      : 'Audio file could not be read'
+  }
   if (/HTTP 404|no such file or directory/i.test(reason)) {
-    return 'Audio file is missing — locate it to play'
+    return `Audio file is missing${locate}`
   }
   if (/permission denied|EACCES/i.test(reason)) {
     return 'Audio file cannot be accessed — check the drive or file permissions'
@@ -56,5 +72,5 @@ export async function probeLocalTrack(filePath: string): Promise<ProbeResult> {
 export async function probeSoundboardTrack(filePath: string): Promise<ProbeResult> {
   const result = await probeLocalTrack(filePath)
   if (result.ok) return result
-  return { ok: false, reason: userFacingAudioFailure(result.reason) }
+  return { ok: false, reason: userFacingAudioFailure(result.reason, true) }
 }

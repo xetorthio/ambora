@@ -268,7 +268,8 @@ export class AmbientEngine {
       return buffer
     } catch (error) {
       const detail = error instanceof Error ? error.message : 'Could not decode audio file'
-      const reason = userFacingAudioFailure(detail)
+      // No relink flow for ambient clips yet, so the copy must not promise one.
+      const reason = userFacingAudioFailure(detail, false)
       useDiagnosticsStore.getState().setUnplayable(clip.id, { source: 'playback', reason })
       audioLog('ambient', 'decode-failed', {
         trackId: clip.id,
