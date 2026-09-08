@@ -136,7 +136,7 @@ export class AmbientEngine {
   private decodeWaiters: Array<() => void> = []
   private volumeUnsub: (() => void) | null = null
 
-  private auditionSource: AudioBufferSourceNode | null = null
+  private auditionVoice: Playback | null = null
   /** Invalidates audition requests that are still loading or decoding. */
   private auditionRun = 0
   private onClipDuration: ((localFilePath: string, duration: number) => void) | null = null
@@ -186,7 +186,7 @@ export class AmbientEngine {
       this.stack = null
       this.bufferCache.clear()
       this.decoding.clear()
-      this.auditionSource = null
+      this.auditionVoice = null
 
       this.ctx = ctx
       this.masterGain = ctx.createGain()
@@ -405,6 +405,7 @@ export class AmbientEngine {
 
   /** Full stop — used when the music engine goes idle. */
   stop(fadeSec = 0): void {
+    this.stopAudition(fadeSec)
     this.retireStack(this.stack, fadeSec)
     this.stack = null
     useAudioStore.getState().setAmbientRuntime({})
@@ -412,6 +413,10 @@ export class AmbientEngine {
 
   /** Pause: hold the stack but silence and unschedule it (fade-to-silence). */
   fadeOut(fadeSec: number): void {
+    // Before the stack guard: fade-to-silence must silence a preview even when
+    // there is no scene running behind it, which is the usual case in the editor.
+    this.stopAudition(fadeSec)
+
     const stack = this.stack
     if (!stack || stack.disposed || !stack.running) return
     stack.running = false
@@ -579,47 +584,81 @@ export class AmbientEngine {
 
     const ctx = this.ensureGraph()
     const run = this.auditionRun
+    // Set before the load so the row can offer a stop while the file is still
+    // decoding — that is what makes a pending audition cancellable.
     useAudioStore.getState().setAuditioningLayerId(layer.id)
-    const clip = clips[Math.floor(Math.random() * clips.length)]
-    const buffer = await this.getBuffer(clip)
-    if (run !== this.auditionRun) return
-    if (!buffer) {
-      useAudioStore.getState().setAuditioningLayerId(null)
+
+    try {
+      const clip = clips[Math.floor(Math.random() * clips.length)]
+      const buffer = await this.getBuffer(clip)
+      if (run !== this.auditionRun) return
+      if (!buffer) {
+        useAudioStore.getState().setAuditioningLayerId(null)
+        return
+      }
+
+      const gain = ctx.createGain()
+      gain.gain.value = layer.volume / 100
+      gain.connect(this.auditionGain!)
+
+      const source = ctx.createBufferSource()
+      source.buffer = buffer
+      source.playbackRate.value = randomPlaybackRate(layer.pitchVariation)
+      source.connect(gain)
+      source.addEventListener('ended', () => {
+        gain.disconnect()
+        source.disconnect()
+        if (this.auditionVoice?.source === source) {
+          this.auditionVoice = null
+          useAudioStore.getState().setAuditioningLayerId(null)
+        }
+      })
+
+      this.auditionVoice = { source, gain }
+      source.start()
+    } catch (error) {
+      // Nothing between the store write and start() throws today, but leaving
+      // the flag set would strand the row showing a stop for a sound that is
+      // not playing, with no way back.
+      if (run === this.auditionRun) {
+        this.auditionVoice = null
+        useAudioStore.getState().setAuditioningLayerId(null)
+      }
+      throw error
+    }
+  }
+
+  /**
+   * Stops the editor preview, optionally over `fadeSec`.
+   *
+   * The audition hangs off masterGain rather than a stack, so nothing that
+   * retires a stack reaches it — every caller has to say so explicitly.
+   */
+  stopAudition(fadeSec = 0): void {
+    this.auditionRun++
+    const voice = this.auditionVoice
+    this.auditionVoice = null
+    useAudioStore.getState().setAuditioningLayerId(null)
+    if (!voice) return
+
+    const { source, gain } = voice
+    const stop = (): void => {
+      try {
+        source.stop()
+      } catch {
+        // Already stopped — nothing to do.
+      }
+    }
+
+    if (fadeSec <= 0) {
+      stop()
       return
     }
 
-    const gain = ctx.createGain()
-    gain.gain.value = layer.volume / 100
-    gain.connect(this.auditionGain!)
-
-    const source = ctx.createBufferSource()
-    source.buffer = buffer
-    source.playbackRate.value = randomPlaybackRate(layer.pitchVariation)
-    source.connect(gain)
-    source.addEventListener('ended', () => {
-      gain.disconnect()
-      source.disconnect()
-      if (this.auditionSource === source) {
-        this.auditionSource = null
-        useAudioStore.getState().setAuditioningLayerId(null)
-      }
-    })
-
-    this.auditionSource = source
-    source.start()
-  }
-
-  stopAudition(): void {
-    this.auditionRun++
-    const source = this.auditionSource
-    this.auditionSource = null
-    useAudioStore.getState().setAuditioningLayerId(null)
-    if (!source) return
-    try {
-      source.stop()
-    } catch {
-      // Already stopped — nothing to do.
-    }
+    // Match whatever the caller is fading, so the preview does not click out
+    // from under a scene that is still ramping down.
+    this.ramp(gain.gain, 0, fadeSec)
+    setTimeout(stop, fadeSec * 1000 + 20)
   }
 
   // ── Scheduling ───────────────────────────────────────────────────────────
