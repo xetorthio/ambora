@@ -59,6 +59,12 @@ interface LiveLayer {
   /** Guards against two concurrent loop starts racing past the "already looping" check. */
   loopStarting: boolean
   /**
+   * Bumped by stopLayerSources. A trigger that started before the bump has been
+   * superseded, so it must not play whatever it was decoding — the clip may have
+   * been edited away, or the layer re-armed under it. Checked after every await.
+   */
+  run: number
+  /**
    * True until this layer has fired once in the current stack. The first delay is
    * drawn from [0, min] so a scene sounds alive immediately.
    */
@@ -365,6 +371,7 @@ export class AmbientEngine {
       sources: new Set(),
       timer: null,
       loopStarting: false,
+      run: 0,
       firing: false,
       isFirstFire: true,
       enabled: layer.enabled,
@@ -549,7 +556,9 @@ export class AmbientEngine {
     useAudioStore.getState().markAmbientLayerTriggered(layerId)
 
     const clip = clips[live.selector.next(clips, live.layer.clipOrder)]
+    const run = live.run
     void this.getBuffer(clip).then((buffer) => {
+      if (run !== live.run) return
       if (!buffer || stack.disposed || !stack.running || !live.enabled) return
       this.playClip(live, buffer, false)
     })
@@ -640,17 +649,21 @@ export class AmbientEngine {
   private async startLoop(stack: Stack, live: LiveLayer): Promise<void> {
     if (!stack.running || !live.enabled || live.loopStarting || live.sources.size > 0) return
     live.loopStarting = true
+    const run = live.run
     try {
       const clips = sortedClips(live.layer)
       if (clips.length === 0) return
       // Multi-clip loop layers pick one variant per activation.
       const clip = clips[live.selector.next(clips, live.layer.clipOrder)]
       const buffer = await this.getBuffer(clip)
+      if (run !== live.run) return
       if (!buffer || stack.disposed || !stack.running || !live.enabled) return
       if (live.sources.size > 0) return
       this.playClip(live, buffer, true)
     } finally {
-      live.loopStarting = false
+      // Only the current run owns the flag; a superseded one already had it
+      // cleared by stopLayerSources and must not clear the replacement's.
+      if (run === live.run) live.loopStarting = false
     }
   }
 
@@ -676,9 +689,11 @@ export class AmbientEngine {
     if (clips.length === 0) return
 
     live.firing = true
+    const run = live.run
     try {
       const clip = clips[live.selector.next(clips, live.layer.clipOrder)]
       const buffer = await this.getBuffer(clip)
+      if (run !== live.run) return
       if (stack.disposed || !stack.running || !live.enabled) return
 
       if (!buffer) {
@@ -698,7 +713,7 @@ export class AmbientEngine {
       // never overlaps itself — the behaviour the RFC asked for.
       source.addEventListener('ended', () => this.scheduleNext(stack, live))
     } finally {
-      live.firing = false
+      if (run === live.run) live.firing = false
     }
   }
 
@@ -786,6 +801,10 @@ export class AmbientEngine {
     live.sources.clear()
     live.loopStarting = false
     live.firing = false
+    // Anything mid-decode for this layer is now stale. Without this, a slow
+    // decode that resolves after a re-arm finds every guard satisfied — sources
+    // empty, loopStarting cleared — and starts the clip we just moved off.
+    live.run++
     this.setSounding(live, false)
   }
 

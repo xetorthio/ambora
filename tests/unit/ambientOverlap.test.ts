@@ -35,6 +35,9 @@ class FakeGain {
 /** Tracks every source ever started so the test can assert on concurrency. */
 const startedSources: FakeSource[] = []
 
+/** Populated by gatedLoads() so a decoded buffer can name the file it came from. */
+const fileOfBytes = new Map<ArrayBuffer, string>()
+
 class FakeSource {
   buffer: unknown = null
   loop = false
@@ -89,8 +92,8 @@ class FakeAudioContext {
   createBufferSource(): FakeSource {
     return new FakeSource()
   }
-  decodeAudioData(): Promise<unknown> {
-    return Promise.resolve({ duration: 3 })
+  decodeAudioData(bytes: ArrayBuffer): Promise<unknown> {
+    return Promise.resolve({ duration: 3, file: fileOfBytes.get(bytes) ?? '' })
   }
   resume(): void {
     /* always running in the fake */
@@ -133,6 +136,45 @@ function climate(layers: AmbientLayer[]): Climate {
 
 const liveSources = (): FakeSource[] => startedSources.filter((s) => s.playing)
 
+/** The clip a started voice is playing, so a test can say which one won a race. */
+const playingFile = (source: FakeSource): string => (source.buffer as { file?: string }).file ?? ''
+
+/**
+ * Hold each clip's load open until the test releases it by name, and tag the
+ * decoded buffer with the file it came from. Lets a test resolve a stale decode
+ * *after* the one that superseded it, which is the ordering that used to lose.
+ */
+function gatedLoads(): { release: (file: string) => void } {
+  const waiting = new Map<string, () => void>()
+
+  vi.stubGlobal('window', {
+    // Echo the path back as the token so the fetch URL names the file.
+    api: { registerAudioPath: (filePath: string) => Promise.resolve(filePath) },
+  })
+  vi.stubGlobal('fetch', (url: string) => {
+    const path = decodeURIComponent(String(url))
+    return new Promise((resolve) => {
+      waiting.set(path, () => {
+        const bytes = new ArrayBuffer(8)
+        fileOfBytes.set(bytes, path)
+        resolve({ ok: true, arrayBuffer: () => Promise.resolve(bytes) })
+      })
+    })
+  })
+  return {
+    release(file) {
+      for (const [path, deliver] of [...waiting]) {
+        if (path.includes(file)) {
+          waiting.delete(path)
+          deliver()
+        }
+      }
+    },
+  }
+}
+
+const clipB = { id: 'clip-2', title: 'b.wav', localFilePath: '/sfx/b.wav', order: 0 }
+
 /** Lets queued promise callbacks (the decode chain) settle. */
 const flush = async (): Promise<void> => {
   for (let i = 0; i < 10; i++) await Promise.resolve()
@@ -142,6 +184,7 @@ beforeEach(async () => {
   vi.resetModules()
   vi.useFakeTimers()
   startedSources.length = 0
+  fileOfBytes.clear()
 
   vi.stubGlobal('AudioContext', FakeAudioContext)
   vi.stubGlobal('window', {
@@ -333,5 +376,95 @@ describe('one voice per layer', () => {
     engine.startClimate(pitchedLoop, 0)
     await flush()
     expect(startedSources.at(-1)?.playbackRate.value).toBeCloseTo(0.8)
+  })
+})
+
+/**
+ * #49: a trigger that starts before a re-arm must not play what it was
+ * decoding. stopLayerSources clears `sources` and `loopStarting`, so without a
+ * generation check every guard an in-flight decode re-tests on resume passes,
+ * and the superseded clip wins purely by resolving first.
+ */
+describe('superseded decodes', () => {
+  it('does not loop a clip the layer was edited away from mid-decode', async () => {
+    const loads = gatedLoads()
+    const engine = AmbientEngine.getInstance()
+
+    engine.startClimate(climate([layer({ mode: 'loop' })]), 0)
+    await flush()
+    expect(startedSources).toHaveLength(0)
+
+    // The GM swaps the clip while the first one is still loading.
+    engine.syncClimate(climate([layer({ mode: 'loop', clips: [clipB] })]))
+    await flush()
+
+    // The stale load resolves first — the ordering that used to decide the race.
+    loads.release('a.wav')
+    await flush()
+    loads.release('b.wav')
+    await flush()
+
+    expect(liveSources()).toHaveLength(1)
+    expect(playingFile(liveSources()[0])).toContain('b.wav')
+    expect(liveSources()[0].loop).toBe(true)
+  })
+
+  it('leaves the layer able to start again after the stale decode is discarded', async () => {
+    const loads = gatedLoads()
+    const engine = AmbientEngine.getInstance()
+
+    engine.startClimate(climate([layer({ mode: 'loop' })]), 0)
+    await flush()
+    engine.syncClimate(climate([layer({ mode: 'loop', clips: [clipB] })]))
+    await flush()
+
+    // Discarding the superseded run must not clear the replacement's
+    // loopStarting flag, or a third arm could start a second voice on top.
+    loads.release('a.wav')
+    await flush()
+    engine.setLayerEnabled('layer-1', true)
+    await flush()
+    loads.release('b.wav')
+    await flush()
+
+    expect(liveSources()).toHaveLength(1)
+    expect(playingFile(liveSources()[0])).toContain('b.wav')
+  })
+
+  it('drops a one-shot whose decode outlives a re-arm', async () => {
+    const loads = gatedLoads()
+    const engine = AmbientEngine.getInstance()
+
+    engine.startClimate(climate([layer({ mode: 'oneshot' })]), 0)
+    await flush()
+    engine.triggerLayer('layer-1')
+    await flush()
+
+    engine.syncClimate(climate([layer({ mode: 'oneshot', clips: [clipB] })]))
+    await flush()
+
+    loads.release('a.wav')
+    await flush()
+
+    // A one-shot the GM never asked for on the new clip, playing the old file.
+    expect(startedSources).toHaveLength(0)
+  })
+
+  it('does not fire a random clip the layer was edited away from', async () => {
+    const loads = gatedLoads()
+    const engine = AmbientEngine.getInstance()
+
+    engine.startClimate(climate([layer()]), 0)
+    await flush()
+    await vi.advanceTimersByTimeAsync(2000)
+    await flush()
+
+    engine.syncClimate(climate([layer({ clips: [clipB] })]))
+    await flush()
+
+    loads.release('a.wav')
+    await flush()
+
+    expect(startedSources.map(playingFile).filter((f) => f.includes('a.wav'))).toHaveLength(0)
   })
 })
