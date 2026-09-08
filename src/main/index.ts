@@ -24,6 +24,8 @@ import {
   updateCachedState,
   getLocalIP,
   setMainWindow,
+  DEFAULT_PORT,
+  PORT_ATTEMPTS,
 } from './server'
 import { analyzeLufs, cancelLufs } from './lufsAnalyze'
 import { probeAudioFile } from './audioProbe'
@@ -61,7 +63,7 @@ function audioMimeForPath(filePath: string): string {
   }
 }
 
-function createWindow(): BrowserWindow {
+function createWindow(serverPort: number): BrowserWindow {
   // Create the browser window.
   const win = new BrowserWindow({
     title: `Ambora ${is.dev ? '(dev)' : `v${app.getVersion()}`}`,
@@ -95,13 +97,13 @@ function createWindow(): BrowserWindow {
   if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
     win.loadURL(process.env['ELECTRON_RENDERER_URL'])
   } else {
-    win.loadURL('http://localhost:3000/desktop/')
+    win.loadURL(`http://localhost:${serverPort}/desktop/`)
   }
 
   return win
 }
 
-function registerIpcHandlers(): void {
+function registerIpcHandlers(serverPort: number): void {
   ipcMain.handle('data:get-campaigns', () => {
     return loadCampaigns() // LoadCampaignsResult
   })
@@ -111,7 +113,7 @@ function registerIpcHandlers(): void {
   })
 
   ipcMain.handle('server:get-info', () => {
-    return { port: 3000, localIP: getLocalIP() }
+    return { port: serverPort, localIP: getLocalIP() }
   })
 
   ipcMain.on('remote:state-update', (_event, message) => {
@@ -228,10 +230,27 @@ protocol.registerSchemesAsPrivileged([
   },
 ])
 
-// This method will be called when Electron has finished
-// initialization and is ready to create browser windows.
-// Some APIs can only be used after this event occurs.
-app.whenReady().then(async () => {
+function reportFatalStartupError(error: unknown): void {
+  console.error('[startup] Ambora could not start:', error)
+
+  const lastPort = DEFAULT_PORT + PORT_ATTEMPTS - 1
+  const detail = error instanceof Error ? error.message : String(error)
+  const message =
+    (error as NodeJS.ErrnoException | null)?.code === 'EADDRINUSE'
+      ? `Ambora needs a local port to serve its own window and the phone remote, ` +
+        `but every port from ${DEFAULT_PORT} to ${lastPort} is already taken.\n\n` +
+        `A development server is the usual cause. Quit whatever is holding those ` +
+        `ports and open Ambora again.`
+      : `Ambora's local server did not start, so there is nothing for the app to load.` +
+        `\n\n${detail}`
+
+  dialog.showErrorBox('Ambora could not start', message)
+  app.quit()
+}
+
+// Runs once Electron has finished initialization and is ready to create
+// browser windows. Some APIs can only be used after that point.
+async function startup(): Promise<void> {
   // Set app user model id for windows
   electronApp.setAppUserModelId('com.electron')
 
@@ -351,24 +370,30 @@ app.whenReady().then(async () => {
     })
   }
 
-  registerIpcHandlers()
+  // Start the Express server first: in production the renderer loads from
+  // http://localhost:<port>/desktop/, and the port it settled on has to reach
+  // the window, the pairing URL, and the QR code from one place.
+  const serverPort = await startServer()
 
-  // Start the Express server first so the renderer can load from
-  // http://localhost:3000/desktop/ in production.
-  await startServer()
+  registerIpcHandlers(serverPort)
 
-  mainWindow = createWindow()
+  mainWindow = createWindow(serverPort)
   setMainWindow(mainWindow)
 
   app.on('activate', function () {
     // On macOS it's common to re-create a window in the app when the
     // dock icon is clicked and there are no other windows open.
     if (BrowserWindow.getAllWindows().length === 0) {
-      mainWindow = createWindow()
+      mainWindow = createWindow(serverPort)
       setMainWindow(mainWindow)
     }
   })
-})
+}
+
+// Without this catch the rejection is unhandled, createWindow() never runs, and
+// on macOS the process stays alive with no window at all — indistinguishable
+// from a crash or a broken install. Whatever goes wrong, say so.
+app.whenReady().then(startup).catch(reportFatalStartupError)
 
 // Flush pending data writes and stop server before quitting
 app.on('before-quit', () => {
