@@ -468,3 +468,78 @@ describe('superseded decodes', () => {
     expect(startedSources.map(playingFile).filter((f) => f.includes('a.wav'))).toHaveLength(0)
   })
 })
+
+/**
+ * #50: the audition hangs off masterGain rather than a stack, so nothing that
+ * retires a stack reaches it. Every way of silencing the app has to say so.
+ */
+describe('audition lifecycle', () => {
+  const auditioningLayerId = async (): Promise<string | null> => {
+    const { useAudioStore } = await import('../../src/renderer/src/store/audioStore')
+    return useAudioStore.getState().auditioningLayerId
+  }
+
+  it('silences an audition when the music engine goes idle', async () => {
+    const engine = AmbientEngine.getInstance()
+    await engine.auditionLayer(layer())
+    expect(liveSources()).toHaveLength(1)
+
+    engine.stop(0)
+
+    expect(liveSources()).toHaveLength(0)
+    expect(await auditioningLayerId()).toBeNull()
+  })
+
+  it('silences an audition on fade-to-silence with no scene behind it', async () => {
+    const engine = AmbientEngine.getInstance()
+    await engine.auditionLayer(layer())
+    expect(liveSources()).toHaveLength(1)
+
+    // The editor case: previewing a layer with nothing else playing. fadeOut
+    // used to return at the stack guard before reaching the audition at all.
+    engine.fadeOut(0.4)
+    await vi.advanceTimersByTimeAsync(500)
+
+    expect(liveSources()).toHaveLength(0)
+    expect(await auditioningLayerId()).toBeNull()
+  })
+
+  it('silences an audition on fade-to-silence while a scene is running', async () => {
+    const engine = AmbientEngine.getInstance()
+    engine.startClimate(climate([layer({ mode: 'loop' })]), 0)
+    await flush()
+    await engine.auditionLayer(layer({ id: 'layer-2' }))
+    expect(liveSources()).toHaveLength(2)
+
+    engine.fadeOut(0.4)
+    await vi.advanceTimersByTimeAsync(600)
+
+    expect(liveSources()).toHaveLength(0)
+  })
+
+  it('fades the audition out rather than cutting it', async () => {
+    const engine = AmbientEngine.getInstance()
+    await engine.auditionLayer(layer())
+    const source = liveSources()[0]
+
+    engine.fadeOut(0.4)
+
+    // The flag clears at once — the row must not offer a stop for a sound that
+    // is on its way out — but the voice keeps sounding through the ramp.
+    expect(await auditioningLayerId()).toBeNull()
+    expect(source.playing).toBe(true)
+
+    await vi.advanceTimersByTimeAsync(500)
+    expect(source.playing).toBe(false)
+  })
+
+  it('cuts the audition when no fade is asked for', async () => {
+    const engine = AmbientEngine.getInstance()
+    await engine.auditionLayer(layer())
+    const source = liveSources()[0]
+
+    engine.stopAudition()
+
+    expect(source.playing).toBe(false)
+  })
+})
