@@ -1,3 +1,10 @@
 {
-  "outputDirectory": "website"
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "outputDirectory": "website",
+  "git": {
+    "deploymentEnabled": {
+      "**": false,
+      "main": true
+    }
+  }
 }
