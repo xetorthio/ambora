@@ -5,6 +5,8 @@ import type {
   RemoteCommand,
   RemoteStateMessage,
   RemoteFullState,
+  CollectCampaignMediaResult,
+  CollectMediaProgress,
 } from '../shared/types'
 import type { AudioProbeResult, LufsAnalyzeResult } from '../shared/audioTools'
 
@@ -23,6 +25,10 @@ interface AmboraAPI {
   getAppVersion(): Promise<string>
   exportCampaign(json: string, suggestedName: string): Promise<boolean>
   importCampaign(): Promise<string | null>
+  collectCampaignMedia(
+    campaign: Campaign,
+    onProgress: (progress: CollectMediaProgress) => void,
+  ): Promise<CollectCampaignMediaResult>
   getServerInfo(): Promise<{ port: number; localIP: string }>
   onRemoteCommand(callback: (command: RemoteCommand) => void): () => void
   onConnectionStatus(callback: (status: { connectedClients: number }) => void): () => void

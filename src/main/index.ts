@@ -30,6 +30,8 @@ import {
 import { analyzeLufs, cancelLufs } from './lufsAnalyze'
 import { probeAudioFile } from './audioProbe'
 import { tokenFromLocalAudioUrl } from '../shared/localAudioUrl'
+import { collectCampaignMedia } from './collectCampaignMedia'
+import type { Campaign, CollectMediaProgress } from '../shared/types'
 
 let mainWindow: BrowserWindow | null = null
 // token -> absolute file path, and the reverse index so repeated requests for
@@ -192,6 +194,12 @@ function registerIpcHandlers(serverPort: number): void {
     if (canceled || filePaths.length === 0) return null
     return readFileSync(filePaths[0], 'utf-8')
   })
+
+  ipcMain.handle('campaign:collect-media', (event, campaign: Campaign, requestId: string) =>
+    collectCampaignMedia(campaign, (progress: CollectMediaProgress) => {
+      event.sender.send('campaign:collect-media-progress', { requestId, progress })
+    }),
+  )
 
   ipcMain.handle('youtube:get-title', async (_event, videoUrl: string) => {
     try {

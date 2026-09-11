@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Download, MoreVertical, Plus, AlertTriangle } from 'lucide-react'
+import { AlertTriangle, CheckCircle2, Download, MoreVertical, Plus } from 'lucide-react'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Button } from '@/components/ui/button'
 import {
@@ -14,6 +14,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import {
@@ -33,7 +34,7 @@ import { useInlineEdit } from '@/hooks/useInlineEdit'
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
 import { serializeCampaignForExport, deserializeCampaignFromImport } from '@/lib/campaignExport'
-import type { Campaign } from '@/lib/types'
+import type { Campaign, CollectCampaignMediaResult, CollectMediaProgress } from '@/lib/types'
 import { AmboraLogo } from './AmboraLogo'
 import { QRCodePanel } from './QRCodePanel'
 
@@ -47,8 +48,22 @@ function CampaignItem({
   onSelect: () => void
 }): React.JSX.Element {
   const { id, name } = campaign
-  const { updateCampaign, deleteCampaign } = useCampaignStore()
+  const { updateCampaign, deleteCampaign, collectCampaignMedia } = useCampaignStore()
   const [deleteOpen, setDeleteOpen] = useState(false)
+  const [collectOpen, setCollectOpen] = useState(false)
+  const [collecting, setCollecting] = useState(false)
+  const [collectResult, setCollectResult] = useState<CollectCampaignMediaResult | null>(null)
+  const [collectProgress, setCollectProgress] = useState<CollectMediaProgress>({
+    completedFiles: 0,
+    totalFiles: 0,
+    copiedFiles: 0,
+    skippedFiles: 0,
+    failedFiles: 0,
+    completedBytes: 0,
+    copiedBytes: 0,
+    totalBytes: 0,
+    failures: [],
+  })
 
   const {
     isEditing: renameIsEditing,
@@ -78,6 +93,30 @@ function CampaignItem({
   function handleDelete(): void {
     deleteCampaign(id)
     toast.success('Campaign deleted')
+  }
+
+  async function handleCollectMedia(): Promise<void> {
+    setCollecting(true)
+    setCollectProgress(emptyCollectProgress())
+    try {
+      const result = await collectCampaignMedia(id, setCollectProgress)
+      if (!result) {
+        toast.error('Campaign no longer exists')
+        setCollectOpen(false)
+        return
+      }
+      setCollectResult(result)
+    } catch {
+      toast.error('Failed to collect campaign media')
+    } finally {
+      setCollecting(false)
+    }
+  }
+
+  function openCollectDialog(): void {
+    setCollectResult(null)
+    setCollectProgress(emptyCollectProgress())
+    setCollectOpen(true)
   }
 
   return (
@@ -114,7 +153,9 @@ function CampaignItem({
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" side="right">
             <DropdownMenuItem onClick={startRenameEditing}>Rename</DropdownMenuItem>
+            <DropdownMenuItem onClick={openCollectDialog}>Collect Media</DropdownMenuItem>
             <DropdownMenuItem onClick={handleExport}>Export</DropdownMenuItem>
+            <DropdownMenuSeparator />
             <DropdownMenuItem variant="destructive" onClick={() => setDeleteOpen(true)}>
               Delete
             </DropdownMenuItem>
@@ -138,7 +179,187 @@ function CampaignItem({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <Dialog
+        open={collectOpen}
+        onOpenChange={(open) => {
+          if (!collecting) setCollectOpen(open)
+        }}
+      >
+        <DialogContent className="max-w-[480px]" showCloseButton={false}>
+          {collecting || collectResult ? (
+            <>
+              <DialogHeader>
+                <DialogTitle>Collect media for &ldquo;{name}&rdquo;</DialogTitle>
+                <DialogDescription>
+                  Local media is copied into this campaign&rsquo;s internal managed media folder.
+                  Original files are not moved or deleted.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="flex flex-col gap-4">
+                <CollectionMetrics
+                  copiedFiles={collectProgress.copiedFiles}
+                  copiedBytes={collectProgress.copiedBytes}
+                  skippedFiles={collectProgress.skippedFiles}
+                />
+                <CollectProgress progress={collectProgress} complete={!collecting} />
+                {collectProgress.failures.length > 0 ? (
+                  <CollectionFailures failures={collectProgress.failures} />
+                ) : (
+                  !collecting && (
+                    <div className="flex items-center gap-2 text-[13px] text-success">
+                      <CheckCircle2 className="size-4" />
+                      All referenced local files are available in the campaign folder.
+                    </div>
+                  )
+                )}
+              </div>
+              <DialogFooter>
+                <Button disabled={collecting} onClick={() => setCollectOpen(false)}>
+                  Close
+                </Button>
+              </DialogFooter>
+            </>
+          ) : (
+            <>
+              <DialogHeader>
+                <DialogTitle>Collect media for &ldquo;{name}&rdquo;?</DialogTitle>
+                <DialogDescription>
+                  Copy all local music, ambient clips, and soundboard sounds into this
+                  campaign&rsquo;s internal managed media folder. Original files will not be moved
+                  or deleted.
+                </DialogDescription>
+              </DialogHeader>
+              <DialogFooter>
+                <Button variant="ghost" onClick={() => setCollectOpen(false)}>
+                  Cancel
+                </Button>
+                <Button onClick={() => void handleCollectMedia()}>Collect Media</Button>
+              </DialogFooter>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </>
+  )
+}
+
+function emptyCollectProgress(): CollectMediaProgress {
+  return {
+    completedFiles: 0,
+    totalFiles: 0,
+    copiedFiles: 0,
+    skippedFiles: 0,
+    failedFiles: 0,
+    completedBytes: 0,
+    copiedBytes: 0,
+    totalBytes: 0,
+    failures: [],
+  }
+}
+
+function formatBytes(bytes: number): string {
+  if (bytes === 0) return '0 B'
+  const units = ['B', 'KB', 'MB', 'GB', 'TB']
+  const unitIndex = Math.min(Math.floor(Math.log(bytes) / Math.log(1024)), units.length - 1)
+  const value = bytes / 1024 ** unitIndex
+  return `${value >= 10 || unitIndex === 0 ? value.toFixed(0) : value.toFixed(1)} ${units[unitIndex]}`
+}
+
+function ResultMetric({ label, value }: { label: string; value: string }): React.JSX.Element {
+  return (
+    <div className="flex min-w-0 flex-col gap-1 rounded-md bg-surface-2 p-3">
+      <span className="text-[11px] text-text-tertiary">{label}</span>
+      <span className="truncate text-[14px] font-medium text-text-primary">{value}</span>
+    </div>
+  )
+}
+
+function CollectionMetrics({
+  copiedFiles,
+  copiedBytes,
+  skippedFiles,
+}: {
+  copiedFiles: number
+  copiedBytes: number
+  skippedFiles: number
+}): React.JSX.Element {
+  return (
+    <div className="grid grid-cols-3 gap-3">
+      <ResultMetric label="Copied" value={String(copiedFiles)} />
+      <ResultMetric label="Disk used" value={formatBytes(copiedBytes)} />
+      <ResultMetric label="Already there" value={String(skippedFiles)} />
+    </div>
+  )
+}
+
+function CollectionFailures({
+  failures,
+}: {
+  failures: CollectMediaProgress['failures']
+}): React.JSX.Element {
+  return (
+    <div className="flex max-h-48 flex-col gap-2 overflow-y-auto rounded-md border border-warning/30 bg-warning/10 p-3">
+      <div className="flex items-center gap-2 text-[13px] font-medium text-warning">
+        <AlertTriangle className="size-4 shrink-0" />
+        {failures.length} file{failures.length === 1 ? '' : 's'} could not be collected
+      </div>
+      <ul className="flex flex-col gap-2">
+        {failures.map((failure) => (
+          <li key={failure.sourcePath} className="min-w-0 text-[12px] text-warning/80">
+            <p className="break-all text-text-secondary">{failure.sourcePath}</p>
+            <p>{failure.reason}</p>
+          </li>
+        ))}
+      </ul>
+    </div>
+  )
+}
+
+function CollectProgress({
+  progress,
+  complete,
+}: {
+  progress: CollectMediaProgress
+  complete: boolean
+}): React.JSX.Element {
+  const percentage =
+    progress.totalBytes > 0
+      ? Math.round((progress.completedBytes / progress.totalBytes) * 100)
+      : progress.totalFiles > 0 && progress.completedFiles === progress.totalFiles
+        ? 100
+        : 0
+
+  return (
+    <div className="flex flex-col gap-2" aria-live="polite">
+      <div className="flex items-center justify-between text-[12px] text-text-secondary">
+        <span>
+          {complete
+            ? 'Collection complete'
+            : progress.totalFiles === 0
+              ? 'Preparing files...'
+              : 'Collecting files...'}
+        </span>
+        {progress.totalFiles > 0 && (
+          <span>
+            {progress.completedFiles} of {progress.totalFiles}
+          </span>
+        )}
+      </div>
+      <div
+        role="progressbar"
+        aria-label="Collecting campaign media"
+        aria-valuemin={0}
+        aria-valuemax={progress.totalBytes || 1}
+        aria-valuenow={progress.completedBytes}
+        className="h-2 overflow-hidden rounded-full bg-surface-3"
+      >
+        <div
+          className="h-full rounded-full bg-accent transition-[width] duration-200 motion-reduce:transition-none"
+          style={{ width: `${percentage}%` }}
+        />
+      </div>
+    </div>
   )
 }
 
