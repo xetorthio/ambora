@@ -3,6 +3,8 @@ import type {
   AmbientClip,
   AmbientLayer,
   Campaign,
+  CollectCampaignMediaResult,
+  CollectMediaProgress,
   Climate,
   LoadCampaignsResult,
   SoundboardSound,
@@ -24,6 +26,10 @@ interface CampaignStore {
   createCampaign: (name: string, description?: string) => Campaign
   updateCampaign: (id: string, updates: Partial<Pick<Campaign, 'name' | 'description'>>) => void
   deleteCampaign: (id: string) => void
+  collectCampaignMedia: (
+    id: string,
+    onProgress: (progress: CollectMediaProgress) => void,
+  ) => Promise<CollectCampaignMediaResult | null>
   setActiveCampaign: (id: string | null) => void
 
   // Climate CRUD
@@ -192,6 +198,58 @@ function normalizePitchVariation(campaign: Campaign): Campaign {
   }
 }
 
+function mediaKey(mediaType: 'music' | 'ambient' | 'sfx', localFilePath: string): string {
+  return `${mediaType}\0${localFilePath}`
+}
+
+function replaceLocalPaths(campaign: Campaign, replacements: Map<string, string>): Campaign {
+  return {
+    ...campaign,
+    climates: campaign.climates.map((climate) => ({
+      ...climate,
+      tracks: climate.tracks.map((track) => {
+        if (track.source !== 'local' || !track.localFilePath) return track
+        const replacement = replacements.get(mediaKey('music', track.localFilePath))
+        return replacement
+          ? {
+              ...track,
+              localFilePath: replacement,
+            }
+          : track
+      }),
+      ...(climate.ambientLayers
+        ? {
+            ambientLayers: climate.ambientLayers.map((layer) => ({
+              ...layer,
+              clips: layer.clips.map((clip) => {
+                const replacement = replacements.get(mediaKey('ambient', clip.localFilePath))
+                return replacement
+                  ? {
+                      ...clip,
+                      localFilePath: replacement,
+                    }
+                  : clip
+              }),
+            })),
+          }
+        : {}),
+    })),
+    ...(campaign.soundboard
+      ? {
+          soundboard: campaign.soundboard.map((sound) => {
+            const replacement = replacements.get(mediaKey('sfx', sound.localFilePath))
+            return replacement
+              ? {
+                  ...sound,
+                  localFilePath: replacement,
+                }
+              : sound
+          }),
+        }
+      : {}),
+  }
+}
+
 export const useCampaignStore = create<CampaignStore>((set, get) => ({
   campaigns: [],
   activeCampaignId: null,
@@ -238,6 +296,29 @@ export const useCampaignStore = create<CampaignStore>((set, get) => ({
     const activeCampaignId = get().activeCampaignId === id ? null : get().activeCampaignId
     set({ campaigns, activeCampaignId })
     persist(campaigns)
+  },
+
+  collectCampaignMedia: async (id, onProgress) => {
+    const campaign = get().campaigns.find((candidate) => candidate.id === id)
+    if (!campaign) return null
+
+    const result = await window.api.collectCampaignMedia(campaign, onProgress)
+    if (result.pathUpdates.length === 0) return result
+
+    const replacements = new Map(
+      result.pathUpdates.map(({ mediaType, sourcePath, collectedPath }) => [
+        mediaKey(mediaType, sourcePath),
+        collectedPath,
+      ]),
+    )
+    const campaigns = get().campaigns.map((candidate) =>
+      candidate.id === id
+        ? { ...replaceLocalPaths(candidate, replacements), updatedAt: now() }
+        : candidate,
+    )
+    set({ campaigns })
+    persist(campaigns)
+    return result
   },
 
   setActiveCampaign: (id) => {

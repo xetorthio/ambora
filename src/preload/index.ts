@@ -1,4 +1,5 @@
 import { contextBridge, ipcRenderer, webUtils } from 'electron'
+import { randomUUID } from 'node:crypto'
 import { electronAPI } from '@electron-toolkit/preload'
 import type {
   Campaign,
@@ -6,6 +7,8 @@ import type {
   RemoteCommand,
   RemoteStateMessage,
   RemoteFullState,
+  CollectCampaignMediaResult,
+  CollectMediaProgress,
 } from '../shared/types'
 import type { AudioProbeResult, LufsAnalyzeResult } from '../shared/audioTools'
 
@@ -37,6 +40,30 @@ const api = {
   exportCampaign: (json: string, suggestedName: string): Promise<boolean> =>
     ipcRenderer.invoke('campaign:export', json, suggestedName),
   importCampaign: (): Promise<string | null> => ipcRenderer.invoke('campaign:import'),
+  collectCampaignMedia: async (
+    campaign: Campaign,
+    onProgress: (progress: CollectMediaProgress) => void,
+  ): Promise<CollectCampaignMediaResult> => {
+    const requestId = randomUUID()
+    const handler = (
+      _event: Electron.IpcRendererEvent,
+      message: { requestId: string; progress: CollectMediaProgress },
+    ): void => {
+      if (message.requestId === requestId) onProgress(message.progress)
+    }
+    ipcRenderer.on('campaign:collect-media-progress', handler)
+    try {
+      const result: CollectCampaignMediaResult = await ipcRenderer.invoke(
+        'campaign:collect-media',
+        campaign,
+        requestId,
+      )
+      onProgress(result.finalProgress)
+      return result
+    } finally {
+      ipcRenderer.removeListener('campaign:collect-media-progress', handler)
+    }
+  },
 
   getServerInfo: (): Promise<{ port: number; localIP: string }> =>
     ipcRenderer.invoke('server:get-info'),

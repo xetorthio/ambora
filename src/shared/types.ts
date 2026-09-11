@@ -128,6 +128,40 @@ export interface LoadCampaignsResult {
   error?: string
 }
 
+export interface CollectMediaFailure {
+  sourcePath: string
+  reason: string
+}
+
+export type CampaignMediaType = 'music' | 'ambient' | 'sfx'
+
+export interface CollectMediaPathUpdate {
+  mediaType: CampaignMediaType
+  sourcePath: string
+  collectedPath: string
+}
+
+export interface CollectMediaProgress {
+  completedFiles: number
+  totalFiles: number
+  copiedFiles: number
+  skippedFiles: number
+  failedFiles: number
+  completedBytes: number
+  copiedBytes: number
+  totalBytes: number
+  failures: CollectMediaFailure[]
+}
+
+export interface CollectCampaignMediaResult {
+  copiedFiles: number
+  skippedFiles: number
+  copiedBytes: number
+  failures: CollectMediaFailure[]
+  pathUpdates: CollectMediaPathUpdate[]
+  finalProgress: CollectMediaProgress
+}
+
 // WebSocket protocol types
 
 export type RemoteCommand =

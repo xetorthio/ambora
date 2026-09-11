@@ -5,6 +5,7 @@ import { DEFAULTS, CLIMATE_COLORS, CLIMATE_ICONS } from '../../src/renderer/src/
 const mockApi = {
   getCampaigns: vi.fn(),
   saveCampaigns: vi.fn(),
+  collectCampaignMedia: vi.fn(),
 }
 
 vi.stubGlobal('window', { api: mockApi })
@@ -16,6 +17,7 @@ beforeEach(async () => {
   vi.resetModules()
   mockApi.getCampaigns.mockReset()
   mockApi.saveCampaigns.mockReset()
+  mockApi.collectCampaignMedia.mockReset()
   const mod = await import('../../src/renderer/src/store/campaignStore')
   useCampaignStore = mod.useCampaignStore
 })
@@ -122,6 +124,67 @@ describe('campaign CRUD', () => {
     const campaign = useCampaignStore.getState().createCampaign('Test')
     useCampaignStore.getState().setActiveCampaign(campaign.id)
     expect(useCampaignStore.getState().activeCampaignId).toBe(campaign.id)
+  })
+
+  it('applies collected paths to every matching local media reference', async () => {
+    const campaign = useCampaignStore.getState().createCampaign('Collected')
+    const climate = useCampaignStore.getState().createClimate(campaign.id, 'Forest')!
+    useCampaignStore.getState().addTrack(campaign.id, climate.id, {
+      title: 'Music',
+      source: 'local',
+      localFilePath: '/library/shared.wav',
+    })
+    useCampaignStore
+      .getState()
+      .createAmbientLayer(campaign.id, climate.id, 'Wind', [
+        { title: 'Wind', localFilePath: '/library/shared.wav' },
+      ])
+    useCampaignStore.getState().addSoundboardSound(campaign.id, {
+      name: 'Effect',
+      localFilePath: '/library/shared.wav',
+      volume: 100,
+      playbackMode: 'restart',
+    })
+    mockApi.collectCampaignMedia.mockResolvedValue({
+      copiedFiles: 1,
+      skippedFiles: 0,
+      copiedBytes: 5,
+      failures: [],
+      pathUpdates: [
+        {
+          mediaType: 'music',
+          sourcePath: '/library/shared.wav',
+          collectedPath: '/ambora-data/campaigns/id/media/music/shared.wav',
+        },
+        {
+          mediaType: 'ambient',
+          sourcePath: '/library/shared.wav',
+          collectedPath: '/ambora-data/campaigns/id/media/ambient/shared.wav',
+        },
+        {
+          mediaType: 'sfx',
+          sourcePath: '/library/shared.wav',
+          collectedPath: '/ambora-data/campaigns/id/media/sfx/shared.wav',
+        },
+      ],
+    })
+    mockApi.saveCampaigns.mockClear()
+
+    const onProgress = vi.fn()
+    const result = await useCampaignStore.getState().collectCampaignMedia(campaign.id, onProgress)
+    const updated = useCampaignStore.getState().campaigns[0]
+
+    expect(result?.copiedFiles).toBe(1)
+    expect(updated.climates[0].tracks[0].localFilePath).toContain('/media/music/shared.wav')
+    expect(updated.climates[0].ambientLayers?.[0].clips[0].localFilePath).toContain(
+      '/media/ambient/shared.wav',
+    )
+    expect(updated.soundboard?.[0].localFilePath).toContain('/media/sfx/shared.wav')
+    expect(mockApi.saveCampaigns).toHaveBeenCalledOnce()
+    expect(mockApi.collectCampaignMedia).toHaveBeenCalledWith(
+      expect.objectContaining({ id: campaign.id }),
+      onProgress,
+    )
   })
 })
 
