@@ -9,6 +9,7 @@ import type { Track } from '@/lib/types'
 
 interface TrackListItemProps {
   track: Track
+  gripRef: React.Ref<HTMLButtonElement>
   onDelete: (trackId: string) => void
   climateColor?: string
   onPlay?: (trackId: string) => void
@@ -24,6 +25,7 @@ interface TrackListItemProps {
 
 export function TrackListItem({
   track,
+  gripRef,
   onDelete,
   climateColor,
   onPlay,
@@ -46,6 +48,7 @@ export function TrackListItem({
 
   return (
     <div
+      data-track-row
       onDragOver={onDragOver}
       onDrop={onDrop}
       className={`group flex h-12 min-w-0 items-center gap-2 rounded-md px-2 hover:bg-surface-2 ${isDragging ? 'opacity-40' : ''}`}
@@ -62,6 +65,7 @@ export function TrackListItem({
       }}
     >
       <button
+        ref={gripRef}
         type="button"
         draggable
         onDragStart={onDragStart}

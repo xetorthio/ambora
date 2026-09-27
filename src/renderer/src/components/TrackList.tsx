@@ -1,8 +1,8 @@
-import { useState } from 'react'
+import { useLayoutEffect, useRef, useState } from 'react'
 import { Music } from 'lucide-react'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { TrackListItem } from '@/components/TrackListItem'
-import { moveItemId, reorderItemIds, type DropPosition } from '@/lib/reorderItems'
+import { moveItemId, reorderItemIds, TRACK_DRAG_TYPE, type DropPosition } from '@/lib/reorderItems'
 import type { Track } from '@/lib/types'
 
 interface TrackListProps {
@@ -26,6 +26,20 @@ export function TrackList({
     trackId: string
     position: DropPosition
   } | null>(null)
+  const pendingKeyboardFocusRef = useRef<{
+    trackId: string
+    orderFingerprint: string
+  } | null>(null)
+  const gripRefs = useRef(new Map<string, HTMLButtonElement>())
+
+  useLayoutEffect(() => {
+    const pendingKeyboardFocus = pendingKeyboardFocusRef.current
+    if (!pendingKeyboardFocus) return
+    const orderFingerprint = sorted.map((track) => track.id).join(',')
+    if (orderFingerprint !== pendingKeyboardFocus.orderFingerprint) return
+    gripRefs.current.get(pendingKeyboardFocus.trackId)?.focus({ preventScroll: true })
+    pendingKeyboardFocusRef.current = null
+  }, [sorted])
 
   function clearDragState(): void {
     setDraggedTrackId(null)
@@ -50,6 +64,7 @@ export function TrackList({
     const currentIds = sorted.map((track) => track.id)
     const reorderedIds = moveItemId(currentIds, trackId, offset)
     if (reorderedIds.some((id, index) => id !== currentIds[index])) {
+      pendingKeyboardFocusRef.current = { trackId, orderFingerprint: reorderedIds.join(',') }
       onReorderTracks(reorderedIds)
     }
   }
@@ -70,6 +85,10 @@ export function TrackList({
           <TrackListItem
             key={track.id}
             track={track}
+            gripRef={(element) => {
+              if (element) gripRefs.current.set(track.id, element)
+              else gripRefs.current.delete(track.id)
+            }}
             onDelete={onDeleteTrack}
             climateColor={climateColor}
             onPlay={onPlayTrack}
@@ -78,12 +97,16 @@ export function TrackList({
             onDragStart={(event) => {
               event.stopPropagation()
               event.dataTransfer.effectAllowed = 'move'
-              event.dataTransfer.setData('application/x-ambora-track', track.id)
+              event.dataTransfer.setData(TRACK_DRAG_TYPE, track.id)
+              const row = event.currentTarget.closest('[data-track-row]')
+              if (row) {
+                event.dataTransfer.setDragImage(row, 20, row.getBoundingClientRect().height / 2)
+              }
               setDraggedTrackId(track.id)
             }}
             onDragEnd={clearDragState}
             onDragOver={(event) => {
-              if (!event.dataTransfer.types.includes('application/x-ambora-track')) return
+              if (!event.dataTransfer.types.includes(TRACK_DRAG_TYPE)) return
               event.preventDefault()
               event.stopPropagation()
               event.dataTransfer.dropEffect = 'move'
@@ -92,7 +115,7 @@ export function TrackList({
               setDropTarget({ trackId: track.id, position })
             }}
             onDrop={(event) => {
-              if (!event.dataTransfer.types.includes('application/x-ambora-track')) return
+              if (!event.dataTransfer.types.includes(TRACK_DRAG_TYPE)) return
               event.preventDefault()
               event.stopPropagation()
               const bounds = event.currentTarget.getBoundingClientRect()

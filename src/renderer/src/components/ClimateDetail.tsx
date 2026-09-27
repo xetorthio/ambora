@@ -33,6 +33,7 @@ import { probeLocalTrack } from '@/audio/probeTrack'
 import type { Campaign, Climate, Track } from '@/lib/types'
 import { toast } from 'sonner'
 import { validateLocalAudioFile } from '@/lib/validateLocalAudio'
+import { TRACK_DRAG_TYPE } from '@/lib/reorderItems'
 
 interface ClimateDetailProps {
   climate: Climate
@@ -178,6 +179,7 @@ export function ClimateDetail({
   }
 
   function handleDragOver(e: React.DragEvent): void {
+    if (e.dataTransfer.types.includes(TRACK_DRAG_TYPE)) return
     e.preventDefault()
     e.dataTransfer.dropEffect = 'copy'
     setIsDragOver(true)
@@ -191,6 +193,7 @@ export function ClimateDetail({
   }
 
   function handleDrop(e: React.DragEvent): void {
+    if (e.dataTransfer.types.includes(TRACK_DRAG_TYPE)) return
     e.preventDefault()
     setIsDragOver(false)
     handleDropFiles(Array.from(e.dataTransfer.files))

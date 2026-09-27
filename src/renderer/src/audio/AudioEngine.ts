@@ -11,7 +11,12 @@ import { LufsCache } from './LufsCache'
 import { computeGainCorrection } from './LufsAnalyzer'
 import { NormalizationChain } from './NormalizationChain'
 import { YouTubeAGC } from './YouTubeAGC'
-import { ShuffleBag, nextSequentialIndex } from './trackSelection'
+import {
+  ShuffleBag,
+  nextSequentialIndex,
+  trackOrderFingerprint,
+  trackSetFingerprint,
+} from './trackSelection'
 import { AmbientEngine } from './AmbientEngine'
 import { SoundboardEngine } from './SoundboardEngine'
 import { getAudioContext, closeAudioContext } from './audioContext'
@@ -72,9 +77,14 @@ interface Channel {
 }
 
 interface ClimatePlaybackSnapshot {
-  trackIndex: number
+  trackId: string
   positionSec: number
   trackFingerprint: string
+}
+
+interface ResolvedClimatePlaybackSnapshot {
+  trackIndex: number
+  positionSec: number
 }
 
 const FADE_IN_DURATION = 1
@@ -315,37 +325,43 @@ export class AudioEngine {
       ids,
       this.failedTrackIds,
       this.currentTrackIndex,
-      this.getTrackFingerprint(this.currentClimate),
+      trackOrderFingerprint(ids),
     )
   }
 
-  private getTrackFingerprint(climate: Climate): string {
-    return [...climate.tracks]
-      .map((t) => t.id)
-      .sort()
-      .join(',')
+  private getTrackSetFingerprint(climate: Climate): string {
+    return trackSetFingerprint(climate.tracks.map((track) => track.id))
   }
 
   private saveClimateSnapshot(): void {
     if (!this.currentClimate) return
     const channel = this.getActiveChannel()
     if (!channel.player) return
+    const track = this.sortedTracks(this.currentClimate)[this.currentTrackIndex]
+    if (!track) return
 
     this.climateSnapshots.set(this.currentClimate.id, {
-      trackIndex: this.currentTrackIndex,
+      trackId: track.id,
       positionSec: channel.player.getCurrentTime(),
-      trackFingerprint: this.getTrackFingerprint(this.currentClimate),
+      trackFingerprint: this.getTrackSetFingerprint(this.currentClimate),
     })
   }
 
-  private getClimateSnapshot(climate: Climate): ClimatePlaybackSnapshot | null {
+  private getClimateSnapshot(climate: Climate): ResolvedClimatePlaybackSnapshot | null {
     const snapshot = this.climateSnapshots.get(climate.id)
     if (!snapshot) return null
-    if (snapshot.trackFingerprint !== this.getTrackFingerprint(climate)) {
+    if (snapshot.trackFingerprint !== this.getTrackSetFingerprint(climate)) {
       this.climateSnapshots.delete(climate.id)
       return null
     }
-    return snapshot
+    const trackIndex = this.sortedTracks(climate).findIndex(
+      (track) => track.id === snapshot.trackId,
+    )
+    if (trackIndex === -1) {
+      this.climateSnapshots.delete(climate.id)
+      return null
+    }
+    return { trackIndex, positionSec: snapshot.positionSec }
   }
 
   private async loadAndPlayOnChannel(
@@ -829,7 +845,7 @@ export class AudioEngine {
         sorted.map((t) => t.id),
         this.failedTrackIds,
         -1,
-        this.getTrackFingerprint(climate),
+        trackOrderFingerprint(sorted.map((t) => t.id)),
       )
       startPositionSec = 0
     } else {

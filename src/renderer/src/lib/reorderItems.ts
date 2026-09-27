@@ -1,5 +1,7 @@
 export type DropPosition = 'before' | 'after'
 
+export const TRACK_DRAG_TYPE = 'application/x-ambora-track'
+
 export function reorderItemIds(
   ids: string[],
   draggedId: string,

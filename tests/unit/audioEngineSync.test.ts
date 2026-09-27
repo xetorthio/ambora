@@ -4,6 +4,9 @@ import type { Climate } from '../../src/shared/types'
 interface AudioEngineState {
   currentClimate: Climate | null
   currentTrackIndex: number
+  climateSnapshots: Map<string, { trackId: string; positionSec: number; trackFingerprint: string }>
+  getTrackSetFingerprint: (climate: Climate) => string
+  getClimateSnapshot: (climate: Climate) => { trackIndex: number; positionSec: number } | null
 }
 
 function climate(trackIds: string[]): Climate {
@@ -40,6 +43,7 @@ describe('AudioEngine climate synchronisation', () => {
   beforeEach(() => {
     internal.currentClimate = climate(['track-a', 'track-b', 'track-c'])
     internal.currentTrackIndex = 1
+    internal.climateSnapshots.clear()
     useAudioStore.setState({ activeTrackId: 'track-b' })
   })
 
@@ -69,5 +73,18 @@ describe('AudioEngine climate synchronisation', () => {
 
     expect(internal.currentClimate).toBe(currentClimate)
     expect(internal.currentTrackIndex).toBe(1)
+  })
+
+  it('resumes the same track after its position in the Climate changes', () => {
+    const original = climate(['track-a', 'track-b', 'track-c'])
+    internal.climateSnapshots.set(original.id, {
+      trackId: 'track-b',
+      positionSec: 150,
+      trackFingerprint: internal.getTrackSetFingerprint(original),
+    })
+
+    const snapshot = internal.getClimateSnapshot(climate(['track-b', 'track-a', 'track-c']))
+
+    expect(snapshot).toEqual({ trackIndex: 0, positionSec: 150 })
   })
 })
