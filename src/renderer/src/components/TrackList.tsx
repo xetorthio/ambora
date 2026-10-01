@@ -80,7 +80,15 @@ export function TrackList({
 
   return (
     <ScrollArea>
-      <div className="flex flex-col gap-0.5">
+      <div
+        className="flex flex-col gap-0.5"
+        onDragLeave={(event) => {
+          if (!event.dataTransfer.types.includes(TRACK_DRAG_TYPE)) return
+          if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
+            setDropTarget(null)
+          }
+        }}
+      >
         {sorted.map((track) => (
           <TrackListItem
             key={track.id}

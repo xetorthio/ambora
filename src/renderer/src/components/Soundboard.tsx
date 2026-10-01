@@ -20,6 +20,7 @@ import { Input } from '@/components/ui/input'
 import { Slider } from '@/components/ui/slider'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { ACCEPTED_AUDIO, ACCEPTED_AUDIO_EXTENSIONS, SOUNDBOARD_DEFAULTS } from '@/lib/constants'
+import { TRACK_DRAG_TYPE } from '@/lib/reorderItems'
 import { validateLocalAudioFile } from '@/lib/validateLocalAudio'
 import { SOUND_ICON_MAP, type SoundboardIconName } from '@/lib/soundIconMap'
 import { useCampaignStore } from '@/store/campaignStore'
@@ -283,14 +284,19 @@ export function Soundboard({ campaign }: SoundboardProps): React.JSX.Element {
     <section
       className="shrink-0 border-t border-border bg-surface-1"
       onDragEnter={(event) => {
+        if (event.dataTransfer.types.includes(TRACK_DRAG_TYPE)) return
         event.preventDefault()
         setIsDragOver(true)
       }}
-      onDragOver={(event) => event.preventDefault()}
+      onDragOver={(event) => {
+        if (event.dataTransfer.types.includes(TRACK_DRAG_TYPE)) return
+        event.preventDefault()
+      }}
       onDragLeave={(event) => {
         if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setIsDragOver(false)
       }}
       onDrop={(event) => {
+        if (event.dataTransfer.types.includes(TRACK_DRAG_TYPE)) return
         event.preventDefault()
         setIsDragOver(false)
         void addFiles(event.dataTransfer.files)
