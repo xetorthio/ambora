@@ -7,11 +7,19 @@ interface AudioEngineState {
   climateSnapshots: Map<string, { trackId: string; positionSec: number; trackFingerprint: string }>
   getTrackSetFingerprint: (climate: Climate) => string
   getClimateSnapshot: (climate: Climate) => { trackIndex: number; positionSec: number } | null
+  engineState: string
+  isActivationLoading: boolean
+  activeChannelId: 'A' | 'B'
+  channelA: unknown
+  channelB: unknown
+  ensureContext: () => void
+  loadAndPlayOnChannel: () => Promise<boolean>
+  ambient: { startClimate: () => void }
 }
 
-function climate(trackIds: string[]): Climate {
+function climate(trackIds: string[], id = 'climate-1'): Climate {
   return {
-    id: 'climate-1',
+    id,
     name: 'Forest',
     color: '#2D9A5D',
     icon: 'TreePine',
@@ -86,5 +94,54 @@ describe('AudioEngine climate synchronisation', () => {
     const snapshot = internal.getClimateSnapshot(climate(['track-b', 'track-a', 'track-c']))
 
     expect(snapshot).toEqual({ trackIndex: 0, positionSec: 150 })
+  })
+
+  describe('switching climates while music plays', () => {
+    const forest = climate(['track-a', 'track-b', 'track-c'], 'forest')
+    const tavern = climate(['track-x', 'track-y'], 'tavern')
+    let positionSec: number
+
+    function channel(id: 'A' | 'B'): unknown {
+      return {
+        id,
+        state: 'active',
+        player: { getCurrentTime: () => positionSec, stop: vi.fn(), dispose: vi.fn() },
+        volumeController: null,
+      }
+    }
+
+    beforeEach(() => {
+      // Stop each activation at its first await: the snapshot is saved before it.
+      internal.ensureContext = (): void => {}
+      internal.loadAndPlayOnChannel = (): Promise<boolean> => new Promise(() => {})
+      internal.ambient = { startClimate: (): void => {} }
+      internal.channelA = channel('A')
+      internal.channelB = channel('B')
+      internal.activeChannelId = 'A'
+      internal.engineState = 'playing'
+      internal.isActivationLoading = false
+      internal.currentClimate = forest
+      internal.currentTrackIndex = 1
+      positionSec = 95
+      useAudioStore.setState({ activeClimateId: 'forest', activeTrackId: 'track-b' })
+    })
+
+    it('saves the outgoing climate, not the incoming one', () => {
+      void engine.activateClimate(tavern)
+
+      expect(internal.climateSnapshots.has('tavern')).toBe(false)
+      expect(internal.getClimateSnapshot(forest)).toEqual({ trackIndex: 1, positionSec: 95 })
+    })
+
+    it('does not save while superseding an activation that is still loading', () => {
+      void engine.activateClimate(tavern)
+      positionSec = 97
+
+      // Tavern is still loading, so the audible channel is still Forest's.
+      void engine.activateClimate(climate(['track-q'], 'dungeon'))
+
+      expect(internal.climateSnapshots.has('tavern')).toBe(false)
+      expect(internal.getClimateSnapshot(forest)).toEqual({ trackIndex: 1, positionSec: 95 })
+    })
   })
 })

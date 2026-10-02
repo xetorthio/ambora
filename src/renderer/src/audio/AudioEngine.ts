@@ -809,6 +809,7 @@ export class AudioEngine {
     }
 
     const previousState = this.engineState
+    const supersedesActivation = this.isActivationLoading
     const mySeq = ++this.activationSeq
     this.isActivationLoading = true
     this.updateStore({ isTrackLoading: true })
@@ -824,6 +825,15 @@ export class AudioEngine {
       this.completePendingCrossfade()
     }
     this.crossfadeManager.cancelAll()
+
+    // Remember where the outgoing climate was, so switching back resumes it. This
+    // must run before currentClimate is reassigned below. Skip it when superseding
+    // an activation that is still loading: currentClimate already names that
+    // climate while the audible channel still belongs to the one before it, whose
+    // position was saved when that activation began.
+    if (!supersedesActivation && (previousState === 'playing' || previousState === 'crossfading')) {
+      this.saveClimateSnapshot()
+    }
 
     const sorted = [...climate.tracks].sort((a, b) => a.order - b.order)
 
@@ -914,7 +924,6 @@ export class AudioEngine {
       }
     } else {
       // Currently playing — crossfade to new climate
-      this.saveClimateSnapshot()
       const previousClimateId = useAudioStore.getState().activeClimateId
 
       const outChannel = this.getActiveChannel()
