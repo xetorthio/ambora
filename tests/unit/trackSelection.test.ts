@@ -3,6 +3,7 @@ import {
   eligibleIndices,
   nextSequentialIndex,
   ShuffleBag,
+  trackOrderFingerprint,
 } from '../../src/renderer/src/audio/trackSelection'
 
 const ids = (n: number): string[] => Array.from({ length: n }, (_, i) => `t${i}`)
@@ -77,5 +78,14 @@ describe('ShuffleBag', () => {
     const idx = bag.next(ids(2), new Set(), -1, 'fp-b')
     expect(idx).toBeGreaterThanOrEqual(0)
     expect(idx).toBeLessThan(2)
+  })
+
+  it('starts a fresh cycle when the same tracks are reordered', () => {
+    const bag = new ShuffleBag(seeded([0]))
+    const original = ['t0', 't1', 't2']
+    const reordered = ['t1', 't0', 't2']
+
+    expect(bag.next(original, new Set(), -1, trackOrderFingerprint(original))).toBe(0)
+    expect(bag.next(reordered, new Set(), -1, trackOrderFingerprint(reordered))).toBe(0)
   })
 })

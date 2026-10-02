@@ -37,6 +37,16 @@ export function nextSequentialIndex(
   return (current + 1) % n
 }
 
+/** Fingerprint for cases where only membership matters, regardless of play order. */
+export function trackSetFingerprint(ids: readonly string[]): string {
+  return [...ids].sort().join(',')
+}
+
+/** Fingerprint for index-based state that must reset when play order changes. */
+export function trackOrderFingerprint(ids: readonly string[]): string {
+  return ids.join(',')
+}
+
 /**
  * A shuffle "bag": draws each eligible track once per cycle (as a shuffled queue)
  * before repeating, guaranteeing full coverage — unlike a stateless random pick,

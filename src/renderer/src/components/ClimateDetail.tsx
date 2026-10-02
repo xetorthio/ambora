@@ -33,6 +33,7 @@ import { probeLocalTrack } from '@/audio/probeTrack'
 import type { Campaign, Climate, Track } from '@/lib/types'
 import { toast } from 'sonner'
 import { validateLocalAudioFile } from '@/lib/validateLocalAudio'
+import { TRACK_DRAG_TYPE } from '@/lib/reorderItems'
 
 interface ClimateDetailProps {
   climate: Climate
@@ -46,7 +47,7 @@ export function ClimateDetail({
   onClose,
 }: ClimateDetailProps): React.JSX.Element {
   const campaignId = campaign.id
-  const { updateClimate, deleteClimate, addTrack, removeTrack } = useCampaignStore()
+  const { updateClimate, deleteClimate, addTrack, removeTrack, reorderTracks } = useCampaignStore()
   const audioEngine = useAudioEngine()
   const activeClimateId = useAudioStore((state) => state.activeClimateId)
   const isPlaying = useAudioStore((state) => state.isPlaying)
@@ -178,6 +179,7 @@ export function ClimateDetail({
   }
 
   function handleDragOver(e: React.DragEvent): void {
+    if (e.dataTransfer.types.includes(TRACK_DRAG_TYPE)) return
     e.preventDefault()
     e.dataTransfer.dropEffect = 'copy'
     setIsDragOver(true)
@@ -191,6 +193,7 @@ export function ClimateDetail({
   }
 
   function handleDrop(e: React.DragEvent): void {
+    if (e.dataTransfer.types.includes(TRACK_DRAG_TYPE)) return
     e.preventDefault()
     setIsDragOver(false)
     handleDropFiles(Array.from(e.dataTransfer.files))
@@ -357,6 +360,7 @@ export function ClimateDetail({
                 onDeleteTrack={handleDeleteTrack}
                 climateColor={climate.color}
                 onPlayTrack={handlePlayTrack}
+                onReorderTracks={(trackIds) => reorderTracks(campaignId, climate.id, trackIds)}
               />
             </div>
           </TabsContent>
