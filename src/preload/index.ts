@@ -24,12 +24,8 @@ const api = {
     ipcRenderer.invoke('audio:register-path', filePath),
   getYouTubeTitle: (videoUrl: string): Promise<string | null> =>
     ipcRenderer.invoke('youtube:get-title', videoUrl),
-  loadLufsCache: (): Promise<Record<string, number>> => ipcRenderer.invoke('audio:load-lufs-cache'),
-  saveLufsCache: (cache: Record<string, number>): void => {
-    ipcRenderer.send('audio:save-lufs-cache', cache)
-  },
-  analyzeLufs: (filePath: string, requestId: string): Promise<LufsAnalyzeResult> =>
-    ipcRenderer.invoke('audio:analyze-lufs', filePath, requestId),
+  getLufs: (filePath: string, requestId: string): Promise<LufsAnalyzeResult> =>
+    ipcRenderer.invoke('audio:get-lufs', filePath, requestId),
   cancelLufs: (requestId: string): void => {
     ipcRenderer.send('audio:cancel-lufs', requestId)
   },

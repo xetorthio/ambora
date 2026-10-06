@@ -7,7 +7,6 @@ import {
   DirectVolumeController,
   type VolumeController,
 } from './VolumeController'
-import { LufsCache } from './LufsCache'
 import { computeGainCorrection } from './LufsAnalyzer'
 import { NormalizationChain } from './NormalizationChain'
 import { YouTubeAGC } from './YouTubeAGC'
@@ -125,7 +124,6 @@ export class AudioEngine {
   private volumeUnsub: (() => void) | null = null
   private onDurationAvailable: ((trackId: string, duration: number) => void) | null = null
   private climateSnapshots = new Map<string, ClimatePlaybackSnapshot>()
-  private lufsCache = new LufsCache()
   private channelNormChains = new Map<ChannelId, NormalizationChain>()
   private youtubeAGC = new YouTubeAGC()
   private positionInterval: ReturnType<typeof setInterval> | null = null
@@ -201,7 +199,6 @@ export class AudioEngine {
       }
 
       this.subscribeToVolumeChanges()
-      this.lufsCache.loadFromDisk()
       this.startPositionMonitor()
     }
 
@@ -473,15 +470,8 @@ export class AudioEngine {
     const chain = this.channelNormChains.get(channel.id)
     if (!chain) return
 
-    const cachedLufs = this.lufsCache.get(filePath)
-    if (cachedLufs !== undefined) {
-      const { gainCorrection } = computeGainCorrection(cachedLufs)
-      chain.setNormalizationGain(gainCorrection)
-      return
-    }
-
-    // Fire-and-forget: FFmpeg ebur128 runs in the main process (off the renderer
-    // thread). Cancel any previous job so rapid switches don't pile up work.
+    // The main process fingerprints, checks its content-addressed cache, and
+    // runs FFmpeg only on a miss. Cancel stale work on rapid switches.
     this.cancelActiveLufs()
     const requestId = crypto.randomUUID()
     this.activeLufsRequestId = requestId
@@ -496,7 +486,7 @@ export class AudioEngine {
       }
 
       void window.api
-        .analyzeLufs(filePath, requestId)
+        .getLufs(filePath, requestId)
         .then((result) => {
           if (this.activeLufsRequestId === requestId) {
             this.activeLufsRequestId = null
@@ -511,7 +501,6 @@ export class AudioEngine {
             }
             return
           }
-          this.lufsCache.set(filePath, result.integratedLufs)
           const { gainCorrection } = computeGainCorrection(result.integratedLufs)
           // Only apply if this chain is still driving this same player
           const currentChain = this.channelNormChains.get(channel.id)
@@ -1348,7 +1337,6 @@ export class AudioEngine {
     if (this.channelA) this.disposeChannel(this.channelA)
     if (this.channelB) this.disposeChannel(this.channelB)
     removeOrphanedYouTubeContainers()
-    this.lufsCache.dispose()
     this.volumeUnsub?.()
     closeAudioContext()
     this.audioContext = null

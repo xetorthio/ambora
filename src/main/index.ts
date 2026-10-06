@@ -16,7 +16,7 @@ import { randomUUID } from 'node:crypto'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import { AMBORA_FILE_FILTER } from '../shared/exportTypes'
 import icon from '../../resources/icon.png?asset'
-import { loadCampaigns, saveCampaigns, flushSave, loadLufsCache, saveLufsCache } from './data'
+import { loadCampaigns, saveCampaigns, flushSave } from './data'
 import {
   startServer,
   stopServer,
@@ -27,7 +27,7 @@ import {
   DEFAULT_PORT,
   PORT_ATTEMPTS,
 } from './server'
-import { analyzeLufs, cancelLufs } from './lufsAnalyze'
+import { cancelLufsRequest, flushLufsCache, getLufs } from './lufsCache'
 import { probeAudioFile } from './audioProbe'
 import { tokenFromLocalAudioUrl } from '../shared/localAudioUrl'
 import { collectCampaignMedia } from './collectCampaignMedia'
@@ -138,27 +138,19 @@ function registerIpcHandlers(serverPort: number): void {
     return token
   })
 
-  ipcMain.handle('audio:load-lufs-cache', () => {
-    return loadLufsCache()
-  })
-
-  ipcMain.on('audio:save-lufs-cache', (_event, cache: Record<string, number>) => {
-    saveLufsCache(cache)
-  })
-
-  ipcMain.handle('audio:analyze-lufs', (_event, filePath: string, requestId: string) => {
+  ipcMain.handle('audio:get-lufs', (_event, filePath: string, requestId: string) => {
     if (typeof filePath !== 'string' || filePath.length === 0) {
       return { ok: false, reason: 'Missing file path' }
     }
     if (typeof requestId !== 'string' || requestId.length === 0) {
       return { ok: false, reason: 'Missing request id' }
     }
-    return analyzeLufs(filePath, requestId)
+    return getLufs(filePath, requestId)
   })
 
   ipcMain.on('audio:cancel-lufs', (_event, requestId: string) => {
     if (typeof requestId === 'string' && requestId.length > 0) {
-      cancelLufs(requestId)
+      cancelLufsRequest(requestId)
     }
   })
 
@@ -409,6 +401,7 @@ app.whenReady().then(startup).catch(reportFatalStartupError)
 app.on('before-quit', () => {
   stopServer()
   flushSave()
+  flushLufsCache()
 })
 
 // Quit when all windows are closed, except on macOS. There, it's common
