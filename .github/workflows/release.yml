@@ -146,12 +146,15 @@ jobs:
           echo "APPLE_API_KEY=$keydir/AuthKey.p8" >> "$GITHUB_ENV"
 
       # Ambora owns the signing keychain rather than letting electron-builder
-      # create one, because electron-builder's version of this is broken.
+      # create one. electron-builder's version of this was broken until 26.16.1.
+      # We kept our own after upgrading (#60) because it makes us immune to that
+      # class of upstream regression, and the find-identity check below turns a
+      # signing failure into an error seconds into the job.
       #
-      # `createKeychain` (app-builder-lib/out/codeSign/macCodeSign.js) protects
-      # the keychain it creates with a random base64 password, then calls
+      # `createKeychain` (app-builder-lib/out/codeSign/macCodeSign.js) protected
+      # the keychain it created with a random base64 password, then called
       # `security set-key-partition-list -k <pw>` passing the *p12 export*
-      # password — where the *keychain* password belongs. The two have never
+      # password — where the *keychain* password belongs. The two never
       # matched. It was harmless for years: `set-keychain-settings` leaves the
       # keychain unlocked, and set-key-partition-list on an unlocked keychain
       # did not validate -k. The macos-26 runner image from 20260907 validates
@@ -159,9 +162,11 @@ jobs:
       # "SecKeychainUnlock: The user name or passphrase you entered is not
       # correct." Nothing in this repo changed; v0.8.1 is where it surfaced.
       #
+      # Fixed upstream in electron-builder#10101, shipped in 26.16.1.
+      #
       # electron-builder only takes that path when CSC_LINK is set
       # (macPackager.js). With CSC_LINK deliberately absent from the build step
-      # below, it signs against CSC_KEYCHAIN and the broken code never runs.
+      # below, it signs against CSC_KEYCHAIN and never creates a keychain.
       - name: Prepare signing keychain
         if: matrix.os == 'macos-latest'
         shell: bash
@@ -197,7 +202,7 @@ jobs:
             $(security list-keychains -d user | tr -d '"')
 
           # -k takes the KEYCHAIN password. This is the argument electron-builder
-          # gets wrong, and the whole reason this step exists.
+          # got wrong before 26.16.1.
           security set-key-partition-list -S apple-tool:,apple:,codesign: \
             -s -k "$pw" "$keychain" > /dev/null
 
@@ -214,7 +219,7 @@ jobs:
       # CSC_LINK is deliberately not passed here — see the step above. It is
       # consumed by the keychain step, which hands the build a ready keychain
       # through CSC_KEYCHAIN in $GITHUB_ENV. Setting it would put
-      # electron-builder back on its own broken keychain path.
+      # electron-builder back on its own keychain path.
       #
       # The remaining credentials are scoped to macOS on purpose: they are not
       # platform-specific, so leaking them to the Windows runner would make
