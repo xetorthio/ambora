@@ -40,4 +40,26 @@ describe('fingerprintAudioFile', () => {
 
     await expect(fingerprintAudioFile(first)).resolves.not.toBe(await fingerprintAudioFile(second))
   })
+
+  it('includes a middle sample for large files with identical ends', async () => {
+    const size = 512 * 1024
+    const firstContent = Buffer.alloc(size, 0)
+    const secondContent = Buffer.from(firstContent)
+    secondContent[Math.floor(size / 2)] = 1
+    const first = await fixture('first.wav', firstContent)
+    const second = await fixture('second.wav', secondContent)
+
+    await expect(fingerprintAudioFile(first)).resolves.not.toBe(await fingerprintAudioFile(second))
+  })
+
+  it('handles the 320 KiB boundary', async () => {
+    const size = 320 * 1024
+    const firstContent = Buffer.alloc(size, 0)
+    const secondContent = Buffer.from(firstContent)
+    secondContent[Math.floor(size / 2)] = 1
+    const first = await fixture('first.wav', firstContent)
+    const second = await fixture('second.wav', secondContent)
+
+    await expect(fingerprintAudioFile(first)).resolves.not.toBe(await fingerprintAudioFile(second))
+  })
 })

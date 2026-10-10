@@ -95,16 +95,6 @@ const NEAR_END_PRELOAD_MARGIN = 1
 // How often to poll the active track's position to detect the near-end window.
 const POSITION_POLL_MS = 250
 
-// Run a low-priority callback when the browser is idle, bounded by a timeout so
-// it still runs promptly under sustained load. Falls back to a short timeout.
-function scheduleIdle(cb: () => void): void {
-  if (typeof requestIdleCallback === 'function') {
-    requestIdleCallback(() => cb(), { timeout: 2000 })
-  } else {
-    setTimeout(cb, 200)
-  }
-}
-
 export class AudioEngine {
   private static instance: AudioEngine | null = null
 
@@ -476,49 +466,41 @@ export class AudioEngine {
     const requestId = crypto.randomUUID()
     this.activeLufsRequestId = requestId
 
-    scheduleIdle(() => {
-      if (channel.player !== player || this.activeLufsRequestId !== requestId) {
+    void window.api
+      .getLufs(filePath, requestId)
+      .then((result) => {
         if (this.activeLufsRequestId === requestId) {
-          window.api.cancelLufs(requestId)
           this.activeLufsRequestId = null
         }
-        return
-      }
-
-      void window.api
-        .getLufs(filePath, requestId)
-        .then((result) => {
-          if (this.activeLufsRequestId === requestId) {
-            this.activeLufsRequestId = null
+        if (!result.ok) {
+          if (!result.cancelled) {
+            audioLog('lufs', 'analysis-failed', {
+              localFilePath: filePath,
+              ext: extOf(filePath),
+              detail: result.reason,
+            })
           }
-          if (!result.ok) {
-            if (!result.cancelled) {
-              audioLog('lufs', 'analysis-failed', {
-                localFilePath: filePath,
-                ext: extOf(filePath),
-                detail: result.reason,
-              })
-            }
-            return
-          }
-          const { gainCorrection } = computeGainCorrection(result.integratedLufs)
-          // Only apply if this chain is still driving this same player
-          const currentChain = this.channelNormChains.get(channel.id)
-          if (currentChain === chain && channel.player === player) {
-            chain.setNormalizationGain(gainCorrection, 0.5)
-          }
+          return
+        }
+        const { gainCorrection } = computeGainCorrection(result.integratedLufs)
+        // Only apply if this chain is still driving this same player
+        const currentChain = this.channelNormChains.get(channel.id)
+        if (currentChain === chain && channel.player === player) {
+          // Cache hits are known before playback begins; a short ramp avoids
+          // an audible step. Fresh FFmpeg analyses retain the gentler ramp.
+          chain.setNormalizationGain(gainCorrection, result.cached ? 0.1 : 0.5)
+        }
+      })
+      .catch((err) => {
+        if (this.activeLufsRequestId === requestId) {
+          this.activeLufsRequestId = null
+        }
+        audioLog('lufs', 'analysis-failed', {
+          localFilePath: filePath,
+          ext: extOf(filePath),
+          detail: err instanceof Error ? err.message : String(err),
         })
-        .catch((err) => {
-          if (this.activeLufsRequestId === requestId) {
-            this.activeLufsRequestId = null
-          }
-          audioLog('lufs', 'analysis-failed', {
-            localFilePath: filePath,
-            ext: extOf(filePath),
-            detail: err instanceof Error ? err.message : String(err),
-          })
-        })
-    })
+      })
   }
 
   private startYouTubeAGC(channel: Channel): void {
