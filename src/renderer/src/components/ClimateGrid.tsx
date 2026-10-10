@@ -6,7 +6,6 @@ import { ACCEPTED_AUDIO_EXTENSIONS } from '@/lib/constants'
 import { useCampaignStore } from '@/store/campaignStore'
 import { useAudioStore } from '@/store/audioStore'
 import { useAudioEngine } from '@/hooks/useAudioEngine'
-import { DEFAULTS } from '@/lib/constants'
 import type { Campaign } from '@/lib/types'
 import { toast } from 'sonner'
 import { validateLocalAudioFile } from '@/lib/validateLocalAudio'
@@ -24,7 +23,6 @@ export function ClimateGrid({ campaign }: ClimateGridProps): React.JSX.Element {
 
   const sorted = [...campaign.climates].sort((a, b) => a.order - b.order)
   const selectedClimate = sorted.find((c) => c.id === selectedClimateId)
-  const canAdd = campaign.climates.length < DEFAULTS.maxClimates
 
   // Safety timer: clear fade animations if they overshoot
   useEffect(() => {
@@ -46,11 +44,7 @@ export function ClimateGrid({ campaign }: ClimateGridProps): React.JSX.Element {
 
   function handleAddClimate(): void {
     const climate = createClimate(campaign.id, 'New Climate')
-    if (climate) {
-      setSelectedClimateId(climate.id)
-    } else {
-      toast.error(`Maximum of ${DEFAULTS.maxClimates} climates reached`)
-    }
+    if (climate) setSelectedClimateId(climate.id)
   }
 
   async function handleDropFiles(climateId: string, files: File[]): Promise<void> {
@@ -99,16 +93,14 @@ export function ClimateGrid({ campaign }: ClimateGridProps): React.JSX.Element {
           onDropFiles={handleDropFiles}
         />
       ))}
-      {canAdd && (
-        <button
-          type="button"
-          className="flex min-h-[120px] min-w-[200px] flex-col items-center justify-center gap-2 rounded-md border-2 border-dashed border-border text-text-tertiary transition-colors duration-150 hover:border-text-tertiary hover:text-text-secondary"
-          onClick={handleAddClimate}
-        >
-          <Plus className="size-6" />
-          <span className="text-[13px]">Add Climate</span>
-        </button>
-      )}
+      <button
+        type="button"
+        className="flex min-h-[120px] min-w-[200px] flex-col items-center justify-center gap-2 rounded-md border-2 border-dashed border-border text-text-tertiary transition-colors duration-150 hover:border-text-tertiary hover:text-text-secondary"
+        onClick={handleAddClimate}
+      >
+        <Plus className="size-6" />
+        <span className="text-[13px]">Add Climate</span>
+      </button>
     </div>
   )
 }

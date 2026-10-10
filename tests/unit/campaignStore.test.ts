@@ -198,14 +198,18 @@ describe('climate CRUD', () => {
     expect(second!.icon).toBe(CLIMATE_ICONS[1])
   })
 
-  it('enforces max climates limit', () => {
+  it('cycles colours and icons once every preset is in use', () => {
     const campaign = useCampaignStore.getState().createCampaign('Campaign')
-    for (let i = 0; i < DEFAULTS.maxClimates; i++) {
+    const count = CLIMATE_ICONS.length + 2
+    for (let i = 0; i < count; i++) {
       useCampaignStore.getState().createClimate(campaign.id, `Climate ${i}`)
     }
-    const overflow = useCampaignStore.getState().createClimate(campaign.id, 'Overflow')
-    expect(overflow).toBeNull()
-    expect(useCampaignStore.getState().campaigns[0].climates).toHaveLength(DEFAULTS.maxClimates)
+    const climates = useCampaignStore.getState().campaigns[0].climates
+    expect(climates).toHaveLength(count)
+    expect(climates[CLIMATE_COLORS.length].color).toBe(CLIMATE_COLORS[0].hex)
+    expect(climates[CLIMATE_COLORS.length + 1].color).toBe(CLIMATE_COLORS[1].hex)
+    expect(climates[CLIMATE_ICONS.length].icon).toBe(CLIMATE_ICONS[0])
+    expect(climates[CLIMATE_ICONS.length + 1].icon).toBe(CLIMATE_ICONS[1])
   })
 
   it('updates a climate', () => {
