@@ -328,16 +328,17 @@ export const useCampaignStore = create<CampaignStore>((set, get) => ({
 
   createClimate: (campaignId, name) => {
     const campaign = get().campaigns.find((c) => c.id === campaignId)
-    if (!campaign || campaign.climates.length >= DEFAULTS.maxClimates) {
-      return null
-    }
+    if (!campaign) return null
 
     const usedColors = new Set(campaign.climates.map((cl) => cl.color))
     const availableColor =
-      CLIMATE_COLORS.find((c) => !usedColors.has(c.hex))?.hex ?? CLIMATE_COLORS[0].hex
+      CLIMATE_COLORS.find((c) => !usedColors.has(c.hex))?.hex ??
+      CLIMATE_COLORS[campaign.climates.length % CLIMATE_COLORS.length].hex
 
     const usedIcons = new Set(campaign.climates.map((cl) => cl.icon))
-    const availableIcon = CLIMATE_ICONS.find((i) => !usedIcons.has(i)) ?? CLIMATE_ICONS[0]
+    const availableIcon =
+      CLIMATE_ICONS.find((i) => !usedIcons.has(i)) ??
+      CLIMATE_ICONS[campaign.climates.length % CLIMATE_ICONS.length]
 
     const climate: Climate = {
       id: crypto.randomUUID(),
