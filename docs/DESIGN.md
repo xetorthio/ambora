@@ -22,24 +22,24 @@ Ambora is a **performance instrument for dungeon masters**. During a game sessio
 
 ## Color System — App Chrome
 
-Built on a neutral scale with a subtle cool undertone (hue ~260 in OKLCH). **Never use pure black (#000000)** — it creates harsh contrast. **Never use pure white (#FFFFFF) for text** — use off-white to reduce glare. All text/background pairs must meet **WCAG AA contrast ratio ≥ 4.5:1**.
+Built on a neutral scale with a subtle cool undertone (hue ~286 in OKLCH). **Never use pure black (#000000)** — it creates harsh contrast. **Never use pure white (#FFFFFF) for text** — use off-white to reduce glare. All text/background pairs must meet **WCAG AA contrast ratio ≥ 4.5:1**.
 
 | Token              | Hex         | OKLCH                    | Usage                                        |
 | ------------------ | ----------- | ------------------------ | -------------------------------------------- |
-| `--bg`             | `#0C0C0E`   | `oklch(0.075 0.005 260)` | App background, phone remote background      |
-| `--surface-1`      | `#141417`   | `oklch(0.105 0.005 260)` | Sidebar, panels, elevated containers         |
-| `--surface-2`      | `#1C1C20`   | `oklch(0.135 0.005 260)` | Cards, inputs, wells                         |
-| `--surface-3`      | `#242428`   | `oklch(0.165 0.005 260)` | Hover states, active surfaces                |
-| `--border`         | `#2A2A30`   | `oklch(0.195 0.007 260)` | Borders, dividers, separators                |
-| `--border-subtle`  | `#1F1F24`   | `oklch(0.150 0.005 260)` | Very subtle dividers                         |
-| `--text-primary`   | `#EAEAED`   | `oklch(0.930 0.005 260)` | Headings, primary content                    |
-| `--text-secondary` | `#9494A0`   | `oklch(0.640 0.015 270)` | Labels, metadata, helper text                |
-| `--text-tertiary`  | `#5C5C68`   | `oklch(0.430 0.015 265)` | Disabled text, placeholders                  |
-| `--accent`         | `#7B93F5`   | `oklch(0.670 0.130 265)` | Interactive elements, links, focus rings     |
-| `--accent-hover`   | `#95A8F8`   | `oklch(0.730 0.110 265)` | Accent hover state                           |
+| `--bg`             | `#0C0C0E`   | `oklch(0.155 0.004 286)` | App background, phone remote background      |
+| `--surface-1`      | `#141417`   | `oklch(0.193 0.006 286)` | Sidebar, panels, elevated containers         |
+| `--surface-2`      | `#1C1C20`   | `oklch(0.228 0.008 286)` | Cards, inputs, wells                         |
+| `--surface-3`      | `#242428`   | `oklch(0.262 0.007 286)` | Hover states, active surfaces                |
+| `--border`         | `#2A2A30`   | `oklch(0.287 0.011 286)` | Borders, dividers, separators                |
+| `--border-subtle`  | `#1F1F24`   | `oklch(0.241 0.009 286)` | Very subtle dividers                         |
+| `--text-primary`   | `#EAEAED`   | `oklch(0.938 0.004 286)` | Headings, primary content                    |
+| `--text-secondary` | `#9494A0`   | `oklch(0.670 0.018 286)` | Labels, metadata, helper text                |
+| `--text-tertiary`  | `#5C5C68`   | `oklch(0.479 0.019 286)` | Disabled text, placeholders                  |
+| `--accent`         | `#7B93F5`   | `oklch(0.688 0.147 272)` | Interactive elements, links, focus rings     |
+| `--accent-hover`   | `#95A8F8`   | `oklch(0.749 0.118 273)` | Accent hover state                           |
 | `--accent-muted`   | `#7B93F520` | —                        | Accent at 12% opacity for subtle backgrounds |
-| `--danger`         | `#F07070`   | `oklch(0.680 0.140 20)`  | Delete actions, errors                       |
-| `--success`        | `#5EC269`   | `oklch(0.700 0.150 145)` | Connection status, confirmations             |
+| `--danger`         | `#F07070`   | `oklch(0.698 0.158 22)`  | Delete actions, errors                       |
+| `--success`        | `#5EC269`   | `oklch(0.732 0.157 146)` | Connection status, confirmations             |
 | `--warning`        | `#F5A45D`   | `oklch(0.785 0.130 60)`  | Missing audio and non-blocking warnings      |
 
 ## Climate Card Color Palette (16 presets)
