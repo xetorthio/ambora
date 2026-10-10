@@ -17,9 +17,7 @@ interface AmboraAPI {
   getPathForFile(file: File): string
   registerAudioPath(filePath: string): Promise<string>
   getYouTubeTitle(videoUrl: string): Promise<string | null>
-  loadLufsCache(): Promise<Record<string, number>>
-  saveLufsCache(cache: Record<string, number>): void
-  analyzeLufs(filePath: string, requestId: string): Promise<LufsAnalyzeResult>
+  getLufs(filePath: string, requestId: string): Promise<LufsAnalyzeResult>
   cancelLufs(requestId: string): void
   probeAudioFile(filePath: string): Promise<AudioProbeResult>
   getAppVersion(): Promise<string>

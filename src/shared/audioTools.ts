@@ -5,7 +5,7 @@
 /** First N seconds analyzed for integrated loudness (matches prior PCM window). */
 export const LUFS_ANALYSIS_SECONDS = 5 * 60
 
-export type LufsAnalyzeOk = { ok: true; integratedLufs: number }
+export type LufsAnalyzeOk = { ok: true; integratedLufs: number; cached?: boolean }
 export type LufsAnalyzeFail = { ok: false; reason: string; cancelled?: boolean }
 export type LufsAnalyzeResult = LufsAnalyzeOk | LufsAnalyzeFail
 

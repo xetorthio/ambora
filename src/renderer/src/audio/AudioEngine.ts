@@ -7,7 +7,6 @@ import {
   DirectVolumeController,
   type VolumeController,
 } from './VolumeController'
-import { LufsCache } from './LufsCache'
 import { computeGainCorrection } from './LufsAnalyzer'
 import { NormalizationChain } from './NormalizationChain'
 import { YouTubeAGC } from './YouTubeAGC'
@@ -96,16 +95,6 @@ const NEAR_END_PRELOAD_MARGIN = 1
 // How often to poll the active track's position to detect the near-end window.
 const POSITION_POLL_MS = 250
 
-// Run a low-priority callback when the browser is idle, bounded by a timeout so
-// it still runs promptly under sustained load. Falls back to a short timeout.
-function scheduleIdle(cb: () => void): void {
-  if (typeof requestIdleCallback === 'function') {
-    requestIdleCallback(() => cb(), { timeout: 2000 })
-  } else {
-    setTimeout(cb, 200)
-  }
-}
-
 export class AudioEngine {
   private static instance: AudioEngine | null = null
 
@@ -125,7 +114,6 @@ export class AudioEngine {
   private volumeUnsub: (() => void) | null = null
   private onDurationAvailable: ((trackId: string, duration: number) => void) | null = null
   private climateSnapshots = new Map<string, ClimatePlaybackSnapshot>()
-  private lufsCache = new LufsCache()
   private channelNormChains = new Map<ChannelId, NormalizationChain>()
   private youtubeAGC = new YouTubeAGC()
   private positionInterval: ReturnType<typeof setInterval> | null = null
@@ -201,7 +189,6 @@ export class AudioEngine {
       }
 
       this.subscribeToVolumeChanges()
-      this.lufsCache.loadFromDisk()
       this.startPositionMonitor()
     }
 
@@ -473,63 +460,47 @@ export class AudioEngine {
     const chain = this.channelNormChains.get(channel.id)
     if (!chain) return
 
-    const cachedLufs = this.lufsCache.get(filePath)
-    if (cachedLufs !== undefined) {
-      const { gainCorrection } = computeGainCorrection(cachedLufs)
-      chain.setNormalizationGain(gainCorrection)
-      return
-    }
-
-    // Fire-and-forget: FFmpeg ebur128 runs in the main process (off the renderer
-    // thread). Cancel any previous job so rapid switches don't pile up work.
+    // The main process fingerprints, checks its content-addressed cache, and
+    // runs FFmpeg only on a miss. Cancel stale work on rapid switches.
     this.cancelActiveLufs()
     const requestId = crypto.randomUUID()
     this.activeLufsRequestId = requestId
 
-    scheduleIdle(() => {
-      if (channel.player !== player || this.activeLufsRequestId !== requestId) {
+    void window.api
+      .getLufs(filePath, requestId)
+      .then((result) => {
         if (this.activeLufsRequestId === requestId) {
-          window.api.cancelLufs(requestId)
           this.activeLufsRequestId = null
         }
-        return
-      }
-
-      void window.api
-        .analyzeLufs(filePath, requestId)
-        .then((result) => {
-          if (this.activeLufsRequestId === requestId) {
-            this.activeLufsRequestId = null
+        if (!result.ok) {
+          if (!result.cancelled) {
+            audioLog('lufs', 'analysis-failed', {
+              localFilePath: filePath,
+              ext: extOf(filePath),
+              detail: result.reason,
+            })
           }
-          if (!result.ok) {
-            if (!result.cancelled) {
-              audioLog('lufs', 'analysis-failed', {
-                localFilePath: filePath,
-                ext: extOf(filePath),
-                detail: result.reason,
-              })
-            }
-            return
-          }
-          this.lufsCache.set(filePath, result.integratedLufs)
-          const { gainCorrection } = computeGainCorrection(result.integratedLufs)
-          // Only apply if this chain is still driving this same player
-          const currentChain = this.channelNormChains.get(channel.id)
-          if (currentChain === chain && channel.player === player) {
-            chain.setNormalizationGain(gainCorrection, 0.5)
-          }
+          return
+        }
+        const { gainCorrection } = computeGainCorrection(result.integratedLufs)
+        // Only apply if this chain is still driving this same player
+        const currentChain = this.channelNormChains.get(channel.id)
+        if (currentChain === chain && channel.player === player) {
+          // Cache hits are known before playback begins; a short ramp avoids
+          // an audible step. Fresh FFmpeg analyses retain the gentler ramp.
+          chain.setNormalizationGain(gainCorrection, result.cached ? 0.1 : 0.5)
+        }
+      })
+      .catch((err) => {
+        if (this.activeLufsRequestId === requestId) {
+          this.activeLufsRequestId = null
+        }
+        audioLog('lufs', 'analysis-failed', {
+          localFilePath: filePath,
+          ext: extOf(filePath),
+          detail: err instanceof Error ? err.message : String(err),
         })
-        .catch((err) => {
-          if (this.activeLufsRequestId === requestId) {
-            this.activeLufsRequestId = null
-          }
-          audioLog('lufs', 'analysis-failed', {
-            localFilePath: filePath,
-            ext: extOf(filePath),
-            detail: err instanceof Error ? err.message : String(err),
-          })
-        })
-    })
+      })
   }
 
   private startYouTubeAGC(channel: Channel): void {
@@ -1348,7 +1319,6 @@ export class AudioEngine {
     if (this.channelA) this.disposeChannel(this.channelA)
     if (this.channelB) this.disposeChannel(this.channelB)
     removeOrphanedYouTubeContainers()
-    this.lufsCache.dispose()
     this.volumeUnsub?.()
     closeAudioContext()
     this.audioContext = null
