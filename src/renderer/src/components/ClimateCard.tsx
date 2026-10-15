@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Play, AlertTriangle } from 'lucide-react'
+import { Play, AlertTriangle, Copy } from 'lucide-react'
 import { ICON_MAP, type ClimateIconName } from '@/lib/iconMap'
 import { ACCEPTED_AUDIO_EXTENSIONS } from '@/lib/constants'
 import { useDiagnosticsStore } from '@/store/diagnosticsStore'
@@ -13,6 +13,7 @@ interface ClimateCardProps {
   fadeAnimation?: FadeAnimation
   onClick: () => void
   onPlay: () => void
+  onDuplicate: () => void
   onDropFiles: (climateId: string, files: File[]) => void | Promise<void>
 }
 
@@ -40,6 +41,7 @@ export function ClimateCard({
   fadeAnimation,
   onClick,
   onPlay,
+  onDuplicate,
   onDropFiles,
 }: ClimateCardProps): React.JSX.Element {
   const Icon = ICON_MAP[climate.icon as ClimateIconName]
@@ -92,21 +94,33 @@ export function ClimateCard({
   }
 
   return (
-    <button
-      type="button"
-      aria-label={`${climate.name}, ${climate.tracks.length} ${climate.tracks.length === 1 ? 'track' : 'tracks'}${isActive ? ', playing' : ''}`}
+    <article
       className="group relative flex min-h-[120px] min-w-[200px] flex-col justify-between overflow-hidden rounded-md bg-surface-2 p-4 text-left transition-colors duration-150 hover:bg-surface-3"
       style={{
         borderLeft: `3px solid ${climate.color}B3`,
         outline: isSelected ? `2px solid ${climate.color}` : undefined,
         outlineOffset: isSelected ? '-2px' : undefined,
       }}
-      onClick={onClick}
       onDragOver={handleDragOver}
       onDragEnter={handleDragEnter}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
     >
+      <button
+        type="button"
+        className="absolute inset-0 z-0 rounded-md"
+        aria-label={`${climate.name}, ${climate.tracks.length} ${climate.tracks.length === 1 ? 'track' : 'tracks'}${isActive ? ', playing' : ''}`}
+        onClick={onClick}
+      />
+      <button
+        type="button"
+        className="absolute top-2 right-2 z-20 flex size-7 items-center justify-center rounded text-text-tertiary opacity-0 transition-opacity hover:bg-surface-1 hover:text-text-primary group-hover:opacity-100 focus-visible:opacity-100"
+        aria-label={`Duplicate ${climate.name}`}
+        title="Duplicate climate"
+        onClick={onDuplicate}
+      >
+        <Copy className="size-3.5" />
+      </button>
       {/* Glow overlay — always rendered, opacity transitions via CSS */}
       <span
         className="pointer-events-none absolute inset-0 rounded-md"
@@ -124,7 +138,7 @@ export function ClimateCard({
         </span>
       )}
 
-      <div className="flex items-center gap-2">
+      <div className="pointer-events-none relative z-10 flex items-center gap-2 pr-6">
         {Icon && <Icon className="size-6" style={{ color: climate.color }} />}
         <span className="text-[14px] font-semibold text-text-primary">{climate.name}</span>
         {/* Pulse dot — always rendered, opacity transitions */}
@@ -137,7 +151,7 @@ export function ClimateCard({
           }}
         />
       </div>
-      <div className="flex items-center justify-between">
+      <div className="pointer-events-none relative z-10 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <span className="text-[11px] text-text-tertiary">
             {climate.tracks.length} {climate.tracks.length === 1 ? 'track' : 'tracks'}
@@ -154,25 +168,18 @@ export function ClimateCard({
           )}
         </div>
         {canPlay && (
-          <span
-            role="button"
-            tabIndex={0}
-            className="flex size-8 items-center justify-center rounded-full opacity-0 transition-opacity duration-150 hover:brightness-125 group-hover:opacity-100"
+          <button
+            type="button"
+            className="pointer-events-auto flex size-8 items-center justify-center rounded-full opacity-0 transition-opacity duration-150 hover:brightness-125 group-hover:opacity-100 focus-visible:opacity-100"
+            aria-label={`Play ${climate.name}`}
             style={{ backgroundColor: `${climate.color}33` }}
             onClick={(e) => {
               e.stopPropagation()
               onPlay()
             }}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' || e.key === ' ') {
-                e.stopPropagation()
-                e.preventDefault()
-                onPlay()
-              }
-            }}
           >
             <Play className="size-4" style={{ color: climate.color }} />
-          </span>
+          </button>
         )}
       </div>
 
@@ -188,6 +195,6 @@ export function ClimateCard({
           }}
         />
       )}
-    </button>
+    </article>
   )
 }

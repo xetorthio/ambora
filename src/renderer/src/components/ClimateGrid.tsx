@@ -15,7 +15,7 @@ interface ClimateGridProps {
 }
 
 export function ClimateGrid({ campaign }: ClimateGridProps): React.JSX.Element {
-  const { createClimate, addTrack } = useCampaignStore()
+  const { createClimate, duplicateClimate, addTrack } = useCampaignStore()
   const { activeClimateId, fadeAnimations, clearAllFadeAnimations } = useAudioStore()
   const audioEngine = useAudioEngine()
   const [selectedClimateId, setSelectedClimateId] = useState<string | null>(null)
@@ -45,6 +45,12 @@ export function ClimateGrid({ campaign }: ClimateGridProps): React.JSX.Element {
   function handleAddClimate(): void {
     const climate = createClimate(campaign.id, 'New Climate')
     if (climate) setSelectedClimateId(climate.id)
+  }
+
+  function handleDuplicateClimate(climateId: string): void {
+    const duplicate = duplicateClimate(campaign.id, climateId)
+    if (!duplicate) return
+    toast.success('Climate duplicated')
   }
 
   async function handleDropFiles(climateId: string, files: File[]): Promise<void> {
@@ -90,6 +96,7 @@ export function ClimateGrid({ campaign }: ClimateGridProps): React.JSX.Element {
           fadeAnimation={fadeAnimations.find((fa) => fa.climateId === climate.id)}
           onClick={() => setSelectedClimateId(climate.id)}
           onPlay={() => audioEngine.activateClimate(climate)}
+          onDuplicate={() => handleDuplicateClimate(climate.id)}
           onDropFiles={handleDropFiles}
         />
       ))}

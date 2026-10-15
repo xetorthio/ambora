@@ -35,6 +35,7 @@ interface CampaignStore {
 
   // Climate CRUD
   createClimate: (campaignId: string, name: string) => Climate | null
+  duplicateClimate: (campaignId: string, climateId: string) => Climate | null
   updateClimate: (
     campaignId: string,
     climateId: string,
@@ -144,6 +145,20 @@ function persist(campaigns: Campaign[]): void {
 
 function now(): string {
   return new Date().toISOString()
+}
+
+function duplicateClimateName(sourceName: string, climates: Climate[]): string {
+  const copyMatch = sourceName.match(/^(.*) \(copy\)(?: \(\d+\))?$/)
+  const baseName = copyMatch?.[1] ?? sourceName
+  const existingNames = new Set(climates.map((climate) => climate.name))
+  const firstCopyName = `${baseName} (copy)`
+  if (!existingNames.has(firstCopyName)) return firstCopyName
+
+  let copyNumber = 2
+  while (existingNames.has(`${firstCopyName} (${String(copyNumber)})`)) {
+    copyNumber++
+  }
+  return `${firstCopyName} (${String(copyNumber)})`
 }
 
 function mapClimate(
@@ -358,6 +373,45 @@ export const useCampaignStore = create<CampaignStore>((set, get) => ({
     set({ campaigns })
     persist(campaigns)
     return climate
+  },
+
+  duplicateClimate: (campaignId, climateId) => {
+    const campaign = get().campaigns.find((item) => item.id === campaignId)
+    const sourceIndex = campaign?.climates.findIndex((climate) => climate.id === climateId) ?? -1
+    const source = sourceIndex >= 0 ? campaign?.climates[sourceIndex] : undefined
+    if (!campaign || !source) return null
+
+    const duplicate: Climate = {
+      ...source,
+      id: crypto.randomUUID(),
+      name: duplicateClimateName(source.name, campaign.climates),
+      remoteLabel: undefined,
+      tracks: source.tracks.map((track) => ({
+        ...track,
+        id: crypto.randomUUID(),
+      })),
+      ambientLayers: source.ambientLayers?.map((layer) => ({
+        ...layer,
+        id: crypto.randomUUID(),
+        clips: layer.clips.map((clip) => ({
+          ...clip,
+          id: crypto.randomUUID(),
+        })),
+      })),
+      order: sourceIndex + 1,
+    }
+
+    const campaigns = get().campaigns.map((item) => {
+      if (item.id !== campaignId) return item
+      const climates = [...item.climates]
+      climates.splice(sourceIndex + 1, 0, duplicate)
+      const reordered = climates.map((climate, order) => ({ ...climate, order }))
+      return { ...item, climates: reordered, updatedAt: now() }
+    })
+
+    set({ campaigns })
+    persist(campaigns)
+    return duplicate
   },
 
   updateClimate: (campaignId, climateId, updates) => {

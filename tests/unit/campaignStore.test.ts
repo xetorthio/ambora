@@ -221,6 +221,64 @@ describe('climate CRUD', () => {
     expect(updated.name).toBe('Dark Forest')
   })
 
+  it('duplicates a climate after the source with fresh nested ids and no remote code', () => {
+    const campaign = useCampaignStore.getState().createCampaign('Campaign')
+    const source = useCampaignStore.getState().createClimate(campaign.id, 'Tavern')!
+    useCampaignStore.getState().updateClimate(campaign.id, source.id, { remoteLabel: 'TAV' })
+    useCampaignStore.getState().addTrack(campaign.id, source.id, {
+      title: 'Music',
+      source: 'local',
+      localFilePath: '/music/tavern.mp3',
+    })
+    const layer = useCampaignStore
+      .getState()
+      .createAmbientLayer(campaign.id, source.id, 'Crowd', [
+        { title: 'Voices', localFilePath: '/ambient/voices.wav' },
+      ])!
+    useCampaignStore.getState().createClimate(campaign.id, 'Street')
+
+    const duplicate = useCampaignStore.getState().duplicateClimate(campaign.id, source.id)!
+    const climates = useCampaignStore.getState().campaigns[0].climates
+    const storedSource = climates[0]
+
+    expect(climates.map((climate) => climate.name)).toEqual(['Tavern', 'Tavern (copy)', 'Street'])
+    expect(climates.map((climate) => climate.order)).toEqual([0, 1, 2])
+    expect(duplicate.id).not.toBe(storedSource.id)
+    expect(duplicate.remoteLabel).toBeUndefined()
+    expect(duplicate.color).toBe(storedSource.color)
+    expect(duplicate.icon).toBe(storedSource.icon)
+    expect(duplicate.tracks[0]).toMatchObject({
+      title: 'Music',
+      localFilePath: '/music/tavern.mp3',
+    })
+    expect(duplicate.tracks[0].id).not.toBe(storedSource.tracks[0].id)
+    expect(duplicate.ambientLayers?.[0].id).not.toBe(layer.id)
+    expect(duplicate.ambientLayers?.[0].clips[0].id).not.toBe(layer.clips[0].id)
+    expect(mockApi.saveCampaigns).toHaveBeenLastCalledWith(
+      expect.arrayContaining([expect.objectContaining({ id: campaign.id })]),
+    )
+  })
+
+  it('returns null when the climate to duplicate does not exist', () => {
+    const campaign = useCampaignStore.getState().createCampaign('Campaign')
+
+    expect(useCampaignStore.getState().duplicateClimate(campaign.id, 'missing')).toBeNull()
+    expect(useCampaignStore.getState().campaigns[0].climates).toEqual([])
+  })
+
+  it('numbers repeated copies without nesting copy suffixes', () => {
+    const campaign = useCampaignStore.getState().createCampaign('Campaign')
+    const source = useCampaignStore.getState().createClimate(campaign.id, 'Tavern')!
+
+    const firstCopy = useCampaignStore.getState().duplicateClimate(campaign.id, source.id)!
+    const secondCopy = useCampaignStore.getState().duplicateClimate(campaign.id, firstCopy.id)!
+    const thirdCopy = useCampaignStore.getState().duplicateClimate(campaign.id, source.id)!
+
+    expect(firstCopy.name).toBe('Tavern (copy)')
+    expect(secondCopy.name).toBe('Tavern (copy) (2)')
+    expect(thirdCopy.name).toBe('Tavern (copy) (3)')
+  })
+
   it('deletes a climate and reorders remaining', () => {
     const campaign = useCampaignStore.getState().createCampaign('Campaign')
     useCampaignStore.getState().createClimate(campaign.id, 'First')
