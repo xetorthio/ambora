@@ -12,6 +12,13 @@ import type {
 } from '../shared/types'
 import type { AudioProbeResult, LufsAnalyzeResult } from '../shared/audioTools'
 
+type DebugLogRecord = {
+  timestamp: string
+  rendererTimeMs: number
+  event: string
+  fields: Record<string, string | number | boolean | null | undefined>
+}
+
 interface AmboraAPI {
   platform: NodeJS.Platform
   getCampaigns(): Promise<LoadCampaignsResult>
@@ -22,6 +29,8 @@ interface AmboraAPI {
   getLufs(filePath: string, requestId: string): Promise<LufsAnalyzeResult>
   cancelLufs(requestId: string): void
   probeAudioFile(filePath: string): Promise<AudioProbeResult>
+  showItemInFolder(filePath: string): void
+  debugLog(record: DebugLogRecord): void
   getAppVersion(): Promise<string>
   exportCampaign(json: string, suggestedName: string): Promise<boolean>
   importCampaign(): Promise<string | null>

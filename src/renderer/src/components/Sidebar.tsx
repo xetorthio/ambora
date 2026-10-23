@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { flushSync } from 'react-dom'
 import { AlertTriangle, CheckCircle2, Download, MoreVertical, Plus } from 'lucide-react'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Button } from '@/components/ui/button'
@@ -30,7 +31,9 @@ import {
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useCampaignStore } from '@/store/campaignStore'
+import { useDiagnosticsStore } from '@/store/diagnosticsStore'
 import { useInlineEdit } from '@/hooks/useInlineEdit'
+import { debugLog } from '@/lib/debugLog'
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
 import { serializeCampaignForExport, deserializeCampaignFromImport } from '@/lib/campaignExport'
@@ -50,6 +53,7 @@ function CampaignItem({
 }): React.JSX.Element {
   const { id, name } = campaign
   const { updateCampaign, deleteCampaign, collectCampaignMedia } = useCampaignStore()
+  const probeProgress = useDiagnosticsStore((state) => state.probeProgress)
   const [deleteOpen, setDeleteOpen] = useState(false)
   const [collectOpen, setCollectOpen] = useState(false)
   const [collecting, setCollecting] = useState(false)
@@ -91,6 +95,19 @@ function CampaignItem({
     }
   }
 
+  function handleSelect(): void {
+    if (isActive) return
+    debugLog('campaign-selection-click', { campaignId: id, campaignName: name })
+    // Commit the visual acknowledgement first. Rendering a campaign with many
+    // cards can take a noticeable amount of time, so moving selection to the
+    // next task gives Chromium a chance to paint this bar before that work.
+    flushSync(() => {
+      useDiagnosticsStore.getState().setProbeProgress({ campaignId: id, completed: 0, total: 1 })
+      useDiagnosticsStore.getState().setCampaignLoading(id)
+    })
+    window.setTimeout(onSelect, 0)
+  }
+
   function handleDelete(): void {
     deleteCampaign(id)
     toast.success('Campaign deleted')
@@ -124,7 +141,7 @@ function CampaignItem({
     <>
       <div
         className={cn(
-          'group flex items-center gap-1 overflow-hidden rounded-md px-3 py-2 text-[14px] transition-colors',
+          'group relative flex items-center gap-1 overflow-hidden rounded-md px-3 py-2 text-[14px] transition-colors',
           isActive ? 'bg-accent-muted text-text-primary' : 'text-text-secondary hover:bg-surface-3',
         )}
       >
@@ -138,7 +155,11 @@ function CampaignItem({
             className="h-6 flex-1 text-[14px]"
           />
         ) : (
-          <button type="button" className="min-w-0 flex-1 truncate text-left" onClick={onSelect}>
+          <button
+            type="button"
+            className="absolute inset-0 min-w-0 truncate px-3 pr-9 text-left"
+            onClick={handleSelect}
+          >
             {name}
           </button>
         )}
@@ -147,7 +168,7 @@ function CampaignItem({
             <Button
               variant="ghost"
               size="icon-xs"
-              className="shrink-0 text-text-tertiary hover:text-text-primary"
+              className="relative z-10 ml-auto shrink-0 text-text-tertiary hover:text-text-primary"
             >
               <MoreVertical className="size-3.5" />
             </Button>
@@ -162,6 +183,23 @@ function CampaignItem({
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
+        {probeProgress?.campaignId === id && (
+          <div
+            role="progressbar"
+            aria-label={`Checking audio files: ${String(probeProgress.completed)} of ${String(probeProgress.total)}`}
+            aria-valuemin={0}
+            aria-valuemax={probeProgress.total}
+            aria-valuenow={probeProgress.completed}
+            className="absolute right-3 bottom-1 left-3 h-1 overflow-hidden rounded-full bg-surface-3"
+          >
+            <div
+              className="h-full rounded-full bg-accent transition-[width] duration-150"
+              style={{
+                width: `${String(Math.max(6, (probeProgress.completed / probeProgress.total) * 100))}%`,
+              }}
+            />
+          </div>
+        )}
       </div>
 
       <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>

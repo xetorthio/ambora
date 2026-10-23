@@ -7,6 +7,12 @@ export interface TrackDiagnostic {
   source: DiagnosticSource
 }
 
+export interface ProbeProgress {
+  campaignId: string
+  completed: number
+  total: number
+}
+
 /**
  * Session-scoped playability diagnostics for tracks, keyed by track id. Absence of
  * an entry means playable/unknown. Fed by two signals: proactive probes (on climate
@@ -19,11 +25,15 @@ interface DiagnosticsStore {
   unplayable: Record<string, TrackDiagnostic>
   // Track ids probed this session, to avoid re-probing the same file repeatedly.
   probed: Set<string>
+  probeProgress: ProbeProgress | null
+  campaignLoadingId: string | null
 
   setUnplayable: (trackId: string, diagnostic: TrackDiagnostic) => void
   clearUnplayable: (trackId: string) => void
   markProbed: (trackId: string) => void
   hasProbed: (trackId: string) => boolean
+  setProbeProgress: (progress: ProbeProgress | null) => void
+  setCampaignLoading: (campaignId: string | null) => void
   // Drop all diagnostics for a track (e.g. when it's removed from a climate).
   forgetTrack: (trackId: string) => void
   clearAll: () => void
@@ -32,6 +42,8 @@ interface DiagnosticsStore {
 export const useDiagnosticsStore = create<DiagnosticsStore>((set, get) => ({
   unplayable: {},
   probed: new Set(),
+  probeProgress: null,
+  campaignLoadingId: null,
 
   setUnplayable: (trackId, diagnostic) =>
     set((state) => ({ unplayable: { ...state.unplayable, [trackId]: diagnostic } })),
@@ -54,6 +66,10 @@ export const useDiagnosticsStore = create<DiagnosticsStore>((set, get) => ({
 
   hasProbed: (trackId) => get().probed.has(trackId),
 
+  setProbeProgress: (probeProgress) => set({ probeProgress }),
+
+  setCampaignLoading: (campaignLoadingId) => set({ campaignLoadingId }),
+
   forgetTrack: (trackId) =>
     set((state) => {
       const probed = new Set(state.probed)
@@ -64,5 +80,6 @@ export const useDiagnosticsStore = create<DiagnosticsStore>((set, get) => ({
       return { probed, unplayable }
     }),
 
-  clearAll: () => set({ unplayable: {}, probed: new Set() }),
+  clearAll: () =>
+    set({ unplayable: {}, probed: new Set(), probeProgress: null, campaignLoadingId: null }),
 }))

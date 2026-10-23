@@ -10,6 +10,7 @@ import { probeSoundboardTrack } from '@/audio/probeTrack'
 import { toast } from 'sonner'
 import { toRemoteCampaigns, toRemoteFullState } from '../../../shared/remoteDto'
 import type { PlaybackState, RemoteFullState } from '@/lib/types'
+import { debugLog } from '@/lib/debugLog'
 
 function getPlaybackState(): PlaybackState {
   const audio = useAudioStore.getState()
@@ -55,6 +56,44 @@ function soundboardDiagnosticsChanged(
 
 export function useRemoteSync(): void {
   useEffect(() => {
+    let campaignSyncTimer: ReturnType<typeof setTimeout> | null = null
+    let pendingCampaignDataUpdate = false
+    let pendingActiveCampaignUpdate = false
+
+    function flushCampaignSync(): void {
+      campaignSyncTimer = null
+      const startedAt = performance.now()
+      const fullState = getFullState()
+      if (pendingCampaignDataUpdate) {
+        window.api.sendStateUpdate({
+          type: 'campaigns-update',
+          payload: { campaigns: fullState.campaigns },
+        })
+      }
+      // The full state always refreshes the main-process cache. On a selection
+      // change it is also the one authoritative message the phone needs; a
+      // separate campaigns-update would duplicate the entire campaign payload.
+      window.api.sendFullState(fullState, pendingActiveCampaignUpdate)
+      debugLog('remote-campaign-sync-flushed', {
+        campaignDataChanged: pendingCampaignDataUpdate,
+        activeCampaignChanged: pendingActiveCampaignUpdate,
+        durationMs: Number((performance.now() - startedAt).toFixed(1)),
+      })
+      pendingCampaignDataUpdate = false
+      pendingActiveCampaignUpdate = false
+    }
+
+    function scheduleCampaignSync(
+      campaignDataChanged: boolean,
+      activeCampaignChanged: boolean,
+    ): void {
+      pendingCampaignDataUpdate ||= campaignDataChanged
+      pendingActiveCampaignUpdate ||= activeCampaignChanged
+      if (campaignSyncTimer) return
+      debugLog('remote-campaign-sync-scheduled', { campaignDataChanged, activeCampaignChanged })
+      campaignSyncTimer = setTimeout(flushCampaignSync, 0)
+    }
+
     // Fetch server info and set URL in connection store
     window.api.getServerInfo().then(({ port, localIP, clients }) => {
       useConnectionStore.getState().setServerUrl(`http://${localIP}:${port}`)
@@ -99,16 +138,10 @@ export function useRemoteSync(): void {
 
     // Subscribe to campaign store changes → push campaign updates
     const unsubCampaigns = useCampaignStore.subscribe((state, prev) => {
-      if (state.campaigns !== prev.campaigns || state.activeCampaignId !== prev.activeCampaignId) {
-        window.api.sendStateUpdate({
-          type: 'campaigns-update',
-          payload: { campaigns: getRemoteCampaigns() },
-        })
-        // A campaign switch changes the remote's selected campaign, but the
-        // incremental campaign payload intentionally contains only the list.
-        // Broadcast the authoritative full state so connected phones update
-        // their active campaign immediately instead of waiting to reconnect.
-        window.api.sendFullState(getFullState(), state.activeCampaignId !== prev.activeCampaignId)
+      const campaignDataChanged = state.campaigns !== prev.campaigns
+      const activeCampaignChanged = state.activeCampaignId !== prev.activeCampaignId
+      if (campaignDataChanged || activeCampaignChanged) {
+        scheduleCampaignSync(campaignDataChanged, activeCampaignChanged)
       }
     })
 
@@ -233,6 +266,7 @@ export function useRemoteSync(): void {
       unsubDiagnostics()
       unsubCommands()
       unsubConnection()
+      if (campaignSyncTimer) clearTimeout(campaignSyncTimer)
       SoundboardEngine.getInstance().stopAll()
     }
   }, [])

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   ChevronDown,
+  FolderOpen,
   FolderPlus,
   Grid3X3,
   Maximize2,
@@ -429,7 +430,7 @@ export function Soundboard({ campaign }: SoundboardProps): React.JSX.Element {
                   {sounds.map((sound) => (
                     <div
                       key={sound.id}
-                      className={`grid min-h-14 grid-cols-[48px_minmax(80px,1fr)_32px_92px_minmax(80px,140px)_132px_32px_24px] items-center gap-2 px-3 ${unplayable[sound.id] ? 'bg-warning/5' : 'bg-surface-1'}`}
+                      className={`grid min-h-14 grid-cols-[48px_minmax(80px,1fr)_32px_92px_minmax(80px,140px)_132px_32px_24px_24px] items-center gap-2 px-3 ${unplayable[sound.id] ? 'bg-warning/5' : 'bg-surface-1'}`}
                     >
                       <SoundKey
                         letter={
@@ -552,6 +553,15 @@ export function Soundboard({ campaign }: SoundboardProps): React.JSX.Element {
                         ) : (
                           <Play className="size-4 fill-current" />
                         )}
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon-xs"
+                        className="text-text-tertiary hover:text-text-primary"
+                        aria-label={`Show ${sound.name} in folder`}
+                        onClick={() => window.api.showItemInFolder(sound.localFilePath)}
+                      >
+                        <FolderOpen className="size-3.5" />
                       </Button>
                       <Button
                         variant="ghost"

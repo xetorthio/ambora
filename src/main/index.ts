@@ -9,9 +9,16 @@ import {
   desktopCapturer,
   session,
 } from 'electron'
-import { createReadStream, readFileSync, statSync, writeFileSync } from 'node:fs'
+import {
+  appendFileSync,
+  createReadStream,
+  mkdirSync,
+  readFileSync,
+  statSync,
+  writeFileSync,
+} from 'node:fs'
 import { Readable } from 'node:stream'
-import { extname, join } from 'path'
+import { dirname, extname, join } from 'path'
 import { randomUUID } from 'node:crypto'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import { AMBORA_FILE_FILTER } from '../shared/exportTypes'
@@ -40,6 +47,23 @@ let mainWindow: BrowserWindow | null = null
 // the same file reuse one token instead of growing the registry unbounded.
 const audioPathRegistry = new Map<string, string>()
 const audioTokenByPath = new Map<string, string>()
+
+type DebugLogRecord = {
+  timestamp: string
+  rendererTimeMs: number
+  event: string
+  fields: Record<string, string | number | boolean | null | undefined>
+}
+
+function appendDebugLog(record: DebugLogRecord): void {
+  const logPath = join(app.getPath('logs'), 'ambora-debug.log')
+  try {
+    mkdirSync(dirname(logPath), { recursive: true })
+    appendFileSync(logPath, `${JSON.stringify(record)}\n`, 'utf-8')
+  } catch (error) {
+    console.warn('[debug] failed to write renderer diagnostic:', error)
+  }
+}
 
 // Map a file extension to a media MIME type so the renderer's <audio>
 // element / FFmpeg demuxer gets an accurate content type.
@@ -109,7 +133,14 @@ function createWindow(serverPort: number): BrowserWindow {
 
 function registerIpcHandlers(serverPort: number): void {
   ipcMain.handle('data:get-campaigns', () => {
-    return loadCampaigns() // LoadCampaignsResult
+    const startedAt = performance.now()
+    const result = loadCampaigns()
+    if (is.dev) {
+      console.info(
+        `[campaigns] loaded ${String(result.campaigns.length)} campaign(s) in ${(performance.now() - startedAt).toFixed(1)}ms`,
+      )
+    }
+    return result
   })
 
   ipcMain.on('data:save-campaigns', (_event, campaigns) => {
@@ -161,6 +192,17 @@ function registerIpcHandlers(serverPort: number): void {
       return { ok: false, reason: 'Missing file path' }
     }
     return probeAudioFile(filePath)
+  })
+
+  ipcMain.on('audio:show-in-folder', (_event, filePath: string) => {
+    if (typeof filePath === 'string' && filePath.length > 0) {
+      shell.showItemInFolder(filePath)
+    }
+  })
+
+  ipcMain.on('debug:log', (_event, record: DebugLogRecord) => {
+    if (!record || typeof record.event !== 'string' || record.event.length > 120) return
+    appendDebugLog(record)
   })
 
   ipcMain.handle('app:get-version', () => {

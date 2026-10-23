@@ -1,4 +1,5 @@
-import { Pencil, Trash2 } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { Loader2, Pencil, Trash2 } from 'lucide-react'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -14,7 +15,9 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { ClimateGrid } from '@/components/ClimateGrid'
 import { useInlineEdit } from '@/hooks/useInlineEdit'
+import { debugLog } from '@/lib/debugLog'
 import { useCampaignStore } from '@/store/campaignStore'
+import { useDiagnosticsStore } from '@/store/diagnosticsStore'
 import type { Campaign } from '@/lib/types'
 import { toast } from 'sonner'
 
@@ -24,6 +27,33 @@ interface CampaignViewProps {
 
 export function CampaignView({ campaign }: CampaignViewProps): React.JSX.Element {
   const { updateCampaign, deleteCampaign } = useCampaignStore()
+  const [isGridReady, setIsGridReady] = useState(false)
+
+  useEffect(() => {
+    debugLog('campaign-view-mounted', {
+      campaignId: campaign.id,
+      climateCount: campaign.climates.length,
+    })
+  }, [campaign.climates.length, campaign.id])
+
+  useEffect(() => {
+    debugLog('campaign-grid-loading-shown', { campaignId: campaign.id })
+    // Give the centered loading state one complete paint before mounting a
+    // potentially large card grid. This makes selection feel responsive even
+    // when rendering the destination campaign takes noticeable time.
+    let secondFrame: number | null = null
+    const firstFrame = requestAnimationFrame(() => {
+      secondFrame = requestAnimationFrame(() => {
+        debugLog('campaign-grid-loading-finished', { campaignId: campaign.id })
+        setIsGridReady(true)
+        useDiagnosticsStore.getState().setCampaignLoading(null)
+      })
+    })
+    return () => {
+      cancelAnimationFrame(firstFrame)
+      if (secondFrame !== null) cancelAnimationFrame(secondFrame)
+    }
+  }, [campaign.id])
 
   const {
     isEditing: nameIsEditing,
@@ -60,7 +90,7 @@ export function CampaignView({ campaign }: CampaignViewProps): React.JSX.Element
     <div className="flex min-w-0 flex-1 flex-col">
       <div className="flex items-start justify-between px-8 pt-8 pb-6">
         <div className="flex min-w-0 flex-1 flex-col gap-1">
-          <div className="flex items-center gap-2">
+          <div className="relative flex items-center gap-2">
             {nameIsEditing ? (
               <Input
                 {...nameInputProps}
@@ -139,7 +169,14 @@ export function CampaignView({ campaign }: CampaignViewProps): React.JSX.Element
         </p>
       </div>
 
-      <ClimateGrid campaign={campaign} />
+      {isGridReady ? (
+        <ClimateGrid campaign={campaign} />
+      ) : (
+        <div className="flex min-h-[280px] flex-1 flex-col items-center justify-center gap-3 text-text-tertiary">
+          <Loader2 className="size-6 animate-spin text-accent" />
+          <span className="text-[13px]">Loading climates…</span>
+        </div>
+      )}
     </div>
   )
 }

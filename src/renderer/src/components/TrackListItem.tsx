@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { GripVertical, Youtube, Music, Trash2, Play, AlertTriangle } from 'lucide-react'
+import { GripVertical, Youtube, Music, Trash2, Play, AlertTriangle, FolderOpen } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { formatDuration } from '@/lib/utils'
@@ -121,6 +121,17 @@ export function TrackListItem({
       <span className="shrink-0 text-[13px] text-text-tertiary">
         {formatDuration(track.duration)}
       </span>
+      {track.source === 'local' && track.localFilePath && !diagnostic && (
+        <Button
+          variant="ghost"
+          size="icon-xs"
+          className="shrink-0 text-text-tertiary hover:text-text-primary"
+          onClick={() => window.api.showItemInFolder(track.localFilePath!)}
+          aria-label={`Show ${track.title} in folder`}
+        >
+          <FolderOpen className="size-3.5" />
+        </Button>
+      )}
       <Button
         variant="ghost"
         size="icon-xs"

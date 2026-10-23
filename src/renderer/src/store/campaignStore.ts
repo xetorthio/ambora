@@ -13,6 +13,7 @@ import type {
 import { DEFAULTS, CLIMATE_COLORS, CLIMATE_ICONS, AMBIENT_DEFAULTS } from '@/lib/constants'
 import { AmbientEngine } from '@/audio/AmbientEngine'
 import { clampPitchVariation } from '@/audio/playbackVariation'
+import { debugLog } from '@/lib/debugLog'
 
 interface CampaignStore {
   campaigns: Campaign[]
@@ -270,9 +271,15 @@ export const useCampaignStore = create<CampaignStore>((set, get) => ({
   isLoaded: false,
 
   loadCampaigns: async () => {
+    const startedAt = performance.now()
     const result = await window.api.getCampaigns()
     const campaigns = result.campaigns.map(normalizePitchVariation)
     set({ campaigns, isLoaded: true })
+    if (import.meta.env.DEV) {
+      console.info(
+        `[campaigns] renderer ready with ${String(campaigns.length)} campaign(s) in ${(performance.now() - startedAt).toFixed(1)}ms`,
+      )
+    }
     return { ...result, campaigns }
   },
 
@@ -340,6 +347,7 @@ export const useCampaignStore = create<CampaignStore>((set, get) => ({
   },
 
   setActiveCampaign: (id) => {
+    debugLog('active-campaign-state-update', { campaignId: id })
     set({ activeCampaignId: id })
   },
 

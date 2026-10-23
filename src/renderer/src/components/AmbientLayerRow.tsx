@@ -4,6 +4,7 @@ import {
   ChevronDown,
   ChevronRight,
   Copy,
+  FolderOpen,
   GripVertical,
   Play,
   Plus,
@@ -555,6 +556,17 @@ export function AmbientLayerRow({
                         <span className="shrink-0 text-[11px] text-text-tertiary">
                           {formatDuration(clip.duration)}
                         </span>
+                        {!diagnostic && clip.localFilePath && (
+                          <Button
+                            variant="ghost"
+                            size="icon-xs"
+                            className="shrink-0 text-text-tertiary hover:text-text-primary"
+                            onClick={() => window.api.showItemInFolder(clip.localFilePath)}
+                            aria-label={`Show ${clip.title} in folder`}
+                          >
+                            <FolderOpen className="size-3" />
+                          </Button>
+                        )}
                         <Button
                           variant="ghost"
                           size="icon-xs"

@@ -604,6 +604,13 @@ export class AmbientEngine {
     })
   }
 
+  /** Stop a currently sounding one-shot layer from the quick climate controls. */
+  stopTriggeredLayer(layerId: string): void {
+    const live = this.stack?.layers.get(layerId)
+    if (!live) return
+    this.stopLayerSources(live)
+  }
+
   // ── Editor audition ──────────────────────────────────────────────────────
 
   /**

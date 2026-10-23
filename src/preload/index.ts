@@ -14,6 +14,13 @@ import type {
 } from '../shared/types'
 import type { AudioProbeResult, LufsAnalyzeResult } from '../shared/audioTools'
 
+type DebugLogRecord = {
+  timestamp: string
+  rendererTimeMs: number
+  event: string
+  fields: Record<string, string | number | boolean | null | undefined>
+}
+
 // Custom APIs for renderer
 const api = {
   platform: process.platform,
@@ -33,6 +40,12 @@ const api = {
   },
   probeAudioFile: (filePath: string): Promise<AudioProbeResult> =>
     ipcRenderer.invoke('audio:probe-file', filePath),
+  showItemInFolder: (filePath: string): void => {
+    ipcRenderer.send('audio:show-in-folder', filePath)
+  },
+  debugLog: (record: DebugLogRecord): void => {
+    ipcRenderer.send('debug:log', record)
+  },
 
   getAppVersion: (): Promise<string> => ipcRenderer.invoke('app:get-version'),
   exportCampaign: (json: string, suggestedName: string): Promise<boolean> =>
